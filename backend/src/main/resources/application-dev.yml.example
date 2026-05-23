@@ -1,0 +1,49 @@
+# ============================================================
+# application-dev.yml.example
+# Copy this file to application-dev.yml and fill in your values.
+# NEVER commit application-dev.yml — it contains real credentials.
+# ============================================================
+
+spring:
+  datasource:
+    url: jdbc:postgresql://<your-supabase-host>:5432/postgres?sslmode=require
+    username: postgres
+    password: <your-supabase-password>
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+      keepalive-time: 30000
+      idle-timeout: 60000
+      max-lifetime: 120000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: public
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+logging:
+  level:
+    com.company.integrationplatform: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    com.zaxxer.hikari: DEBUG
+
+jwt:
+  secret: <base64-encoded-256-bit-secret>
+  expiration: 86400000
+  refresh-expiration: 604800000
+
+sync:
+  interval-ms: 300000
