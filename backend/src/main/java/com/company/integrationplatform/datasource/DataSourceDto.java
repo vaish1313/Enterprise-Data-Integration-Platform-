@@ -130,7 +130,9 @@ public class DataSourceDto {
         @Schema(description = "Source type", example = "DATABASE")
         private DataSourceEntity.SourceType sourceType;
 
-        @Schema(description = "Connection parameters map")
+        @Schema(description = "Connection parameters map. Sensitive fields (password, token, secret, etc.) "
+                           + "are masked as '******' in all API responses. "
+                           + "Original values are stored securely in the database.")
         private Map<String, String> connectionDetails;
 
         @Schema(description = "Current status", example = "ACTIVE")
@@ -151,13 +153,18 @@ public class DataSourceDto {
         /**
          * Maps a {@link DataSourceEntity} to a {@link Response} DTO.
          * Entities are never returned directly from controllers.
+         *
+         * <p><b>Security:</b> Sensitive fields in {@code connectionDetails}
+         * (password, token, secret, etc.) are replaced with {@code "******"}
+         * via {@link CredentialMaskingUtil}. The original values remain in the
+         * database and are never modified.
          */
         public static Response from(DataSourceEntity entity) {
             return Response.builder()
                     .id(entity.getId())
                     .name(entity.getName())
                     .sourceType(entity.getSourceType())
-                    .connectionDetails(entity.getConnectionDetails())
+                    .connectionDetails(CredentialMaskingUtil.mask(entity.getConnectionDetails()))
                     .status(entity.getStatus())
                     .description(entity.getDescription())
                     .createdBy(entity.getCreatedBy())
