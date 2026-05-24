@@ -50,8 +50,8 @@ public class SecurityConfig {
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers(PUBLIC_URLS).permitAll()
-                    // Dashboard — read-only analytics, restricted to privileged roles
-                    .requestMatchers(HttpMethod.GET, "/api/v1/dashboard/**").hasAnyRole("ADMIN", "ANALYST")
+                    // Dashboard — read-only analytics, accessible to all authenticated roles
+                    .requestMatchers(HttpMethod.GET, "/api/v1/dashboard/**").hasAnyRole("ADMIN", "ANALYST", "OPERATOR")
                     // Users — full CRUD restricted to ADMIN only
                     .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                     // Audit — DELETE and EXPORT are restricted at method level via @PreAuthorize;

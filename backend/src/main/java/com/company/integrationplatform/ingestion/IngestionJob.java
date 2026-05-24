@@ -7,8 +7,17 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Represents a single ingestion job execution.
+ * Tracks lifecycle, file metadata, record counts, and final status.
+ */
 @Entity
-@Table(name = "ingestion_jobs")
+@Table(name = "ingestion_jobs",
+        indexes = {
+                @Index(name = "idx_ingest_job_datasource", columnList = "data_source_id"),
+                @Index(name = "idx_ingest_job_status",     columnList = "status"),
+                @Index(name = "idx_ingest_job_type",       columnList = "ingestion_type")
+        })
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,11 +37,14 @@ public class IngestionJob extends BaseEntity {
     @Column(name = "ingestion_type", nullable = false, length = 50)
     private IngestionType ingestionType;
 
-    @Column(name = "started_at")
-    private LocalDateTime startedAt;
+    /** Original filename of the uploaded CSV (null for API/scheduled jobs). */
+    @Column(name = "file_name", length = 500)
+    private String fileName;
 
-    @Column(name = "completed_at")
-    private LocalDateTime completedAt;
+    /** Total rows found in the CSV (header excluded). Set after parsing. */
+    @Column(name = "total_records")
+    @Builder.Default
+    private int totalRecords = 0;
 
     @Column(name = "records_processed")
     @Builder.Default
@@ -41,6 +53,12 @@ public class IngestionJob extends BaseEntity {
     @Column(name = "records_failed")
     @Builder.Default
     private int recordsFailed = 0;
+
+    @Column(name = "started_at")
+    private LocalDateTime startedAt;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
 
     @Column(name = "error_message", length = 1000)
     private String errorMessage;

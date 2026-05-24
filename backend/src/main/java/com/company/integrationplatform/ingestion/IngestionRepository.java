@@ -1,5 +1,7 @@
 package com.company.integrationplatform.ingestion;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -10,18 +12,38 @@ import java.util.UUID;
 @Repository
 public interface IngestionRepository extends JpaRepository<IngestionJob, UUID> {
 
+    // ── Filtered lookups ──────────────────────────────────────────────────────
+
+    Page<IngestionJob> findByDataSourceId(UUID dataSourceId, Pageable pageable);
+
+    Page<IngestionJob> findByStatus(IngestionJob.JobStatus status, Pageable pageable);
+
+    Page<IngestionJob> findByIngestionType(IngestionJob.IngestionType type, Pageable pageable);
+
     List<IngestionJob> findByDataSourceId(UUID dataSourceId);
 
     List<IngestionJob> findByStatus(IngestionJob.JobStatus status);
 
+    // ── Dashboard aggregates ──────────────────────────────────────────────────
+
     long countByStatus(IngestionJob.JobStatus status);
 
-    @Query("SELECT SUM(j.recordsProcessed) FROM IngestionJob j WHERE j.status = 'COMPLETED'")
+    @Query("SELECT COALESCE(SUM(j.recordsProcessed), 0) FROM IngestionJob j WHERE j.status = 'COMPLETED'")
     Long sumSuccessfulRecords();
 
-    @Query("SELECT SUM(j.recordsFailed) FROM IngestionJob j")
+    @Query("SELECT COALESCE(SUM(j.recordsFailed), 0) FROM IngestionJob j")
     Long sumFailedRecords();
+
+    @Query("SELECT COALESCE(SUM(j.totalRecords), 0) FROM IngestionJob j")
+    long sumTotalRecords();
+
+    @Query("SELECT COALESCE(AVG(j.recordsProcessed), 0) FROM IngestionJob j WHERE j.status = 'COMPLETED'")
+    double avgRecordsPerJob();
 
     @Query("SELECT j FROM IngestionJob j ORDER BY j.createdAt DESC")
     List<IngestionJob> findLatestJobs(org.springframework.data.domain.Pageable pageable);
+
+    // ── Type breakdown (dashboard) ────────────────────────────────────────────
+
+    long countByIngestionType(IngestionJob.IngestionType type);
 }

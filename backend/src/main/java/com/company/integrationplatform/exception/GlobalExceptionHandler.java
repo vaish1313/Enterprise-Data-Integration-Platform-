@@ -68,6 +68,22 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(com.company.integrationplatform.ingestion.CsvIngestionException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCsvIngestion(
+            com.company.integrationplatform.ingestion.CsvIngestionException ex) {
+        log.warn("CSV ingestion validation failed: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(com.company.integrationplatform.transformation.TransformationExecutionException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTransformationExecution(
+            com.company.integrationplatform.transformation.TransformationExecutionException ex) {
+        log.warn("Transformation execution failed: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Map<String, String>>> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex) {

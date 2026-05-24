@@ -23,7 +23,6 @@
         <java.version>17</java.version>
         <jjwt.version>0.11.5</jjwt.version>
         <springdoc.version>2.3.0</springdoc.version>
-        <opencsv.version>5.9</opencsv.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
     </properties>
 
@@ -94,11 +93,11 @@
             <version>${springdoc.version}</version>
         </dependency>
 
-        <!-- OpenCSV -->
+        <!-- Apache Commons CSV (replaces OpenCSV) -->
         <dependency>
-            <groupId>com.opencsv</groupId>
-            <artifactId>opencsv</artifactId>
-            <version>${opencsv.version}</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.11.0</version>
         </dependency>
 
         <!-- MapStruct -->

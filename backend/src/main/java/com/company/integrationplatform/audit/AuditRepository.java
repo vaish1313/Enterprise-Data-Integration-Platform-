@@ -39,4 +39,24 @@ public interface AuditRepository extends JpaRepository<AuditEntity, UUID> {
     @Modifying
     @Query("DELETE FROM AuditEntity a WHERE a.timestamp < :cutoff")
     int deleteByTimestampBefore(LocalDateTime cutoff);
+
+    // ── Dashboard aggregate queries ───────────────────────────────────────────
+
+    @Query("SELECT COUNT(a) FROM AuditEntity a WHERE a.status = 'SUCCESS'")
+    long countSuccessfulActions();
+
+    @Query("SELECT COUNT(a) FROM AuditEntity a WHERE a.status = 'FAILED'")
+    long countFailedActions();
+
+    @Query("SELECT COUNT(a) FROM AuditEntity a WHERE a.action = :action")
+    long countByAction(String action);
+
+    @Query("SELECT COUNT(DISTINCT a.username) FROM AuditEntity a")
+    long countDistinctUsers();
+
+    @Query("SELECT a FROM AuditEntity a ORDER BY a.timestamp DESC")
+    List<AuditEntity> findLatestEntries(Pageable pageable);
+
+    @Query("SELECT a.action, COUNT(a) FROM AuditEntity a GROUP BY a.action ORDER BY COUNT(a) DESC")
+    List<Object[]> countGroupedByAction();
 }

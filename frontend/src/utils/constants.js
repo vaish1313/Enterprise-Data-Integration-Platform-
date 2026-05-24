@@ -1,28 +1,14 @@
-// API base URL
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+export const ROLES = { ADMIN: 'ADMIN', ANALYST: 'ANALYST', OPERATOR: 'OPERATOR' }
 
-// Auth
-export const TOKEN_KEY = 'access_token';
-export const REFRESH_TOKEN_KEY = 'refresh_token';
+export const JOB_STATUSES = ['PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'PARTIAL']
 
-// Roles
-export const ROLES = {
-  ADMIN: 'ADMIN',
-  USER: 'USER',
-  VIEWER: 'VIEWER',
-};
+export const SOURCE_TYPES = ['CSV', 'REST_API', 'DATABASE']
 
-// Pagination
-export const DEFAULT_PAGE_SIZE = 10;
-export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+export const SOURCE_STATUSES = ['ACTIVE', 'INACTIVE', 'ERROR']
 
-// Data source types
-export const DATA_SOURCE_TYPES = ['POSTGRESQL', 'MYSQL', 'MONGODB', 'REST_API', 'CSV', 'S3'];
+export const TRANSFORMATION_TYPES = [
+  'DIRECT_MAPPING', 'UPPERCASE', 'LOWERCASE', 'TRIM',
+  'CONCAT', 'DEFAULT_VALUE', 'DATE_FORMAT',
+]
 
-// Job statuses
-export const JOB_STATUS = {
-  PENDING: 'PENDING',
-  RUNNING: 'RUNNING',
-  COMPLETED: 'COMPLETED',
-  FAILED: 'FAILED',
-};
+export const API_BASE = '/api/v1'

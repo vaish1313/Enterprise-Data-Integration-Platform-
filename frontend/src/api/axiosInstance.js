@@ -1,33 +1,52 @@
-import axios from 'axios';
-import { API_BASE_URL, TOKEN_KEY, REFRESH_TOKEN_KEY } from '../utils/constants';
+import axios from 'axios'
+import toast from 'react-hot-toast'
 
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+const api = axios.create({
+  baseURL: '/api/v1',
   headers: { 'Content-Type': 'application/json' },
-  timeout: 15000,
-});
+  timeout: 30000,
+})
 
-// Request interceptor – attach JWT
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+/* ── Request interceptor: attach JWT ──────────────────────────────────── */
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('accessToken')
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
 
-// Response interceptor – handle 401
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(REFRESH_TOKEN_KEY);
-      window.location.href = '/login';
+/* ── Response interceptor: handle errors globally ─────────────────────── */
+api.interceptors.response.use(
+  res => res,
+  async err => {
+    const status  = err.response?.status
+    const message = err.response?.data?.error || err.response?.data?.message || err.message
+
+    if (status === 401) {
+      /* Try refresh once */
+      const refresh = localStorage.getItem('refreshToken')
+      if (refresh && !err.config._retry) {
+        err.config._retry = true
+        try {
+          const { data } = await axios.post('/api/v1/auth/refresh', { refreshToken: refresh })
+          localStorage.setItem('accessToken', data.data.accessToken)
+          err.config.headers.Authorization = `Bearer ${data.data.accessToken}`
+          return api(err.config)
+        } catch {
+          localStorage.clear()
+          window.location.href = '/login'
+        }
+      } else {
+        localStorage.clear()
+        window.location.href = '/login'
+      }
     }
-    return Promise.reject(error);
-  }
-);
 
-export default axiosInstance;
+    if (status === 403) toast.error('Access denied — insufficient permissions')
+    if (status === 404) toast.error('Resource not found')
+    if (status >= 500)  toast.error('Server error — please try again')
+
+    return Promise.reject(err)
+  }
+)
+
+export default api
