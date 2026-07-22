@@ -64,7 +64,7 @@ public class IngestionRecord extends BaseEntity {
      * Whether this record has been picked up and processed by the sync engine.
      * Set to true after a successful sync job processes this record.
      */
-    @Column(name = "synchronized", nullable = false)
+    @Column(name = "is_synchronized", nullable = false)
     @Builder.Default
     private boolean synchronized_ = false;
 

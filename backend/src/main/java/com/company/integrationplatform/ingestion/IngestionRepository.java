@@ -35,7 +35,7 @@ public interface IngestionRepository extends JpaRepository<IngestionJob, UUID> {
     Long sumFailedRecords();
 
     @Query("SELECT COALESCE(SUM(j.totalRecords), 0) FROM IngestionJob j")
-    long sumTotalRecords();
+    Long sumTotalRecords();
 
     @Query("SELECT COALESCE(AVG(j.recordsProcessed), 0) FROM IngestionJob j WHERE j.status = 'COMPLETED'")
     double avgRecordsPerJob();

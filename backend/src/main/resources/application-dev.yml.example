@@ -6,9 +6,9 @@
 
 spring:
   datasource:
-    url: jdbc:postgresql://<your-supabase-host>:5432/postgres?sslmode=require
+    url: jdbc:postgresql://localhost:5432/integration_platform
     username: postgres
-    password: <your-supabase-password>
+    password: password
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5

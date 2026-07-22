@@ -26,7 +26,7 @@ public interface SyncRepository extends JpaRepository<SyncJob, UUID> {
     @Query("SELECT j FROM SyncJob j ORDER BY j.startedAt DESC")
     List<SyncJob> findLatestJobs(Pageable pageable);
 
-    @Query("SELECT j FROM SyncJob j WHERE j.status = 'COMPLETED' ORDER BY j.completedAt DESC")
+    @Query("SELECT j FROM SyncJob j WHERE j.status = 'COMPLETED' ORDER BY j.completedAt DESC LIMIT 1")
     Optional<SyncJob> findLastSuccessfulSync();
 
     @Query("SELECT j FROM SyncJob j WHERE j.dataSourceId = :dataSourceId ORDER BY j.startedAt DESC")
@@ -43,8 +43,8 @@ public interface SyncRepository extends JpaRepository<SyncJob, UUID> {
     long sumTotalRecordsFailed();
 
     @Query("SELECT COALESCE(AVG(j.executionTimeMs), 0) FROM SyncJob j WHERE j.executionTimeMs IS NOT NULL")
-    double avgExecutionTimeMs();
+    Double avgExecutionTimeMs();
 
     @Query("SELECT COALESCE(MAX(j.executionTimeMs), 0) FROM SyncJob j WHERE j.executionTimeMs IS NOT NULL")
-    long maxExecutionTimeMs();
+    Long maxExecutionTimeMs();
 }

@@ -172,7 +172,8 @@ public class SyncService {
         long pendingSync   = recordRepository.countPendingSync();
         long alreadySynced = recordRepository.countSynchronized();
 
-        long avgExecMs = (long) syncRepository.avgExecutionTimeMs();
+        Double avgExecDouble = syncRepository.avgExecutionTimeMs();
+        long avgExecMs = avgExecDouble != null ? avgExecDouble.longValue() : 0L;
         long maxExecMs = syncRepository.maxExecutionTimeMs();
 
         LocalDateTime lastSuccessAt = syncRepository.findLastSuccessfulSync()

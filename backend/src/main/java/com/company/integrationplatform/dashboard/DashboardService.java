@@ -79,10 +79,11 @@ public class DashboardService {
         long errorDs    = dataSourceRepository.countByStatus(DataSourceEntity.SourceStatus.ERROR);
 
         // ── Ingestion ─────────────────────────────────────────────────────────
-        long totalIngestion     = ingestionRepository.count();
+        long totalIngestion      = ingestionRepository.count();
         long successfulIngestion = ingestionRepository.countByStatus(IngestionJob.JobStatus.COMPLETED);
-        long failedIngestion    = ingestionRepository.countByStatus(IngestionJob.JobStatus.FAILED);
-        long totalImported      = ingestionRepository.sumTotalRecords();
+        long failedIngestion     = ingestionRepository.countByStatus(IngestionJob.JobStatus.FAILED);
+        Long totalImportedRaw    = ingestionRepository.sumTotalRecords();
+        long totalImported       = totalImportedRaw != null ? totalImportedRaw : 0L;
 
         // ── Transformation ────────────────────────────────────────────────────
         long totalRules  = transformationRepository.count();
@@ -215,8 +216,10 @@ public class DashboardService {
                 .findLastSuccessfulSync()
                 .map(SyncJob::getCompletedAt)
                 .orElse(null);
-        long avgExecMs = (long) syncRepository.avgExecutionTimeMs();
-        long maxExecMs = syncRepository.maxExecutionTimeMs();
+        Double avgExecRaw = syncRepository.avgExecutionTimeMs();
+        Long   maxExecRaw = syncRepository.maxExecutionTimeMs();
+        long avgExecMs = avgExecRaw != null ? avgExecRaw.longValue() : 0L;
+        long maxExecMs = maxExecRaw != null ? maxExecRaw             : 0L;
 
         // ── Rate ──────────────────────────────────────────────────────────────
         double successPct = total == 0 ? 0.0 : round((completed * 100.0) / total);
