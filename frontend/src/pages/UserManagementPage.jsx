@@ -40,7 +40,7 @@ function UserForm({ onSubmit, defaultValues, loading, isEdit }) {
             className={`input ${errors.username ? 'input-error' : ''}`}
             placeholder="john.doe"
           />
-          {errors.username && <p className="text-xs text-red-400 mt-1">{errors.username.message}</p>}
+          {errors.username && <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{errors.username.message}</p>}
         </div>
         <div>
           <label className="label">Email *</label>
@@ -52,7 +52,7 @@ function UserForm({ onSubmit, defaultValues, loading, isEdit }) {
             className={`input ${errors.email ? 'input-error' : ''}`}
             placeholder="john@company.com"
           />
-          {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>}
+          {errors.email && <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{errors.email.message}</p>}
         </div>
         <div>
           <label className="label">Role *</label>
@@ -63,7 +63,7 @@ function UserForm({ onSubmit, defaultValues, loading, isEdit }) {
             <option value="">Select role…</option>
             {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
-          {errors.role && <p className="text-xs text-red-400 mt-1">{errors.role.message}</p>}
+          {errors.role && <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{errors.role.message}</p>}
         </div>
 
         {/* Password only shown on create */}
@@ -83,12 +83,12 @@ function UserForm({ onSubmit, defaultValues, loading, isEdit }) {
               <button
                 type="button"
                 onClick={() => setShowPw(p => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-80" style={{ color: 'var(--text-secondary)' }}
               >
                 {showPw ? <HiEyeOff className="w-4 h-4" /> : <HiEye className="w-4 h-4" />}
               </button>
             </div>
-            {errors.password && <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>}
+            {errors.password && <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{errors.password.message}</p>}
           </div>
         )}
       </div>
@@ -99,9 +99,9 @@ function UserForm({ onSubmit, defaultValues, loading, isEdit }) {
             {...register('enabled')}
             type="checkbox"
             id="enabled"
-            className="w-4 h-4 accent-brand-600"
+            className="w-4 h-4" style={{ accentColor: 'var(--text-primary)' }}
           />
-          <label htmlFor="enabled" className="text-sm text-slate-600 dark:text-slate-300">
+          <label htmlFor="enabled" className="text-sm" style={{ color: 'var(--text-secondary)' }}>
             Account enabled
           </label>
         </div>
@@ -189,12 +189,12 @@ export default function UserManagementPage() {
       key: 'username', label: 'User',
       render: (v, row) => (
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-gradient-brand flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: 'var(--text-primary)', color: 'var(--bg-base)' }}>
             {v?.[0]?.toUpperCase()}
           </div>
           <div>
-            <p className="font-semibold text-sm text-slate-800 dark:text-white">{v}</p>
-            <p className="text-xs text-slate-400">{row.email}</p>
+            <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{v}</p>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{row.email}</p>
           </div>
         </div>
       ),
@@ -229,7 +229,7 @@ export default function UserManagementPage() {
           </button>
           <button
             onClick={() => setDeleteTarget(row)}
-            className="btn-icon text-red-400 hover:text-red-500"
+            className="btn-icon hover:opacity-80" style={{ color: 'var(--text-primary)' }}
             title="Delete"
           >
             <HiTrash className="w-4 h-4" />
@@ -258,7 +258,7 @@ export default function UserManagementPage() {
         </div>
       </div>
 
-      <div className="card p-4 flex gap-3">
+      <div className="glass-card p-4 flex gap-3">
         <div className="relative flex-1">
           <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
@@ -270,14 +270,14 @@ export default function UserManagementPage() {
         </div>
       </div>
 
-      <div className="card p-0 overflow-hidden">
+      <div className="glass-card p-0 overflow-hidden">
         <DataTable
           columns={columns}
           data={data?.content}
           loading={loading}
           emptyMessage="No users found"
         />
-        <div className="px-4 py-3 border-t border-slate-200 dark:border-white/10">
+        <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--glass-border)' }}>
           <Pagination page={page} totalPages={data?.totalPages ?? 0} onPageChange={setPage} />
         </div>
       </div>

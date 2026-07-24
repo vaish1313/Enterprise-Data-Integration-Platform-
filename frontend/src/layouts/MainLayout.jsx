@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Sidebar } from '../components/Sidebar'
-import { Navbar }  from '../components/Navbar'
+import { Navbar } from '../components/Navbar'
 
 export default function MainLayout() {
   const { isAuth } = useAuth()
@@ -12,7 +12,7 @@ export default function MainLayout() {
   if (!isAuth) return <Navigate to="/login" replace />
 
   return (
-    <div className="flex h-screen overflow-hidden bg-surface-50 dark:bg-surface-950">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

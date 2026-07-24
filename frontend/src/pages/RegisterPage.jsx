@@ -29,37 +29,49 @@ export default function RegisterPage() {
   }
 
   return (
-    <div>
+    <div style={{
+      background: 'rgba(255, 255, 255, 0.08)',
+      backdropFilter: 'blur(24px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+      border: '1px solid rgba(255, 255, 255, 0.18)',
+      borderRadius: '20px',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.37), inset 0 1px 0 rgba(255,255,255,0.1)',
+      padding: '2rem 2.25rem',
+      position: 'relative',
+      zIndex: 1
+    }}>
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-white">Create account</h1>
-        <p className="text-slate-400 mt-2 text-sm">Join the EDIP platform</p>
+        <h1 className="text-3xl font-medium" style={{ color: '#f5f5f5' }}>Create account</h1>
+        <p className="mt-2 text-sm" style={{ color: '#a3a3a0' }}>Join the EDIP platform</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <label className="label text-slate-400">Username</label>
-          <div className="relative">
-            <HiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <label className="label uppercase" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', letterSpacing: '0.06em' }}>USERNAME</label>
+          <div className="relative mt-1.5">
+            <HiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'rgba(255,255,255,0.5)' }} />
             <input {...register('username', { required: 'Required', minLength: { value: 3, message: 'Min 3 chars' } })}
-              placeholder="username" className={`input pl-10 bg-surface-900 border-white/10 text-white placeholder:text-slate-600 focus:border-brand-500 ${errors.username ? 'input-error' : ''}`} />
+              placeholder="username" className={`w-full pl-10 px-4 py-2.5 text-sm transition-all duration-200 outline-none focus:bg-[rgba(255,255,255,0.1)] focus:border-[rgba(255,255,255,0.3)] placeholder-[rgba(255,255,255,0.35)] ${errors.username ? 'input-error' : ''}`}
+              style={{ background: 'rgba(255, 255, 255, 0.06)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '10px', color: '#fff', '--autofill-color': '#fff' }} />
           </div>
-          {errors.username && <p className="text-xs text-red-400 mt-1">{errors.username.message}</p>}
+          {errors.username && <p className="text-xs mt-1" style={{ color: '#a3a3a0' }}>{errors.username.message}</p>}
         </div>
 
         <div>
-          <label className="label text-slate-400">Email</label>
-          <div className="relative">
-            <HiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <label className="label uppercase" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', letterSpacing: '0.06em' }}>EMAIL</label>
+          <div className="relative mt-1.5">
+            <HiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'rgba(255,255,255,0.5)' }} />
             <input {...register('email', { required: 'Required', pattern: { value: /\S+@\S+\.\S+/, message: 'Invalid email' } })}
-              placeholder="you@company.com" className={`input pl-10 bg-surface-900 border-white/10 text-white placeholder:text-slate-600 focus:border-brand-500 ${errors.email ? 'input-error' : ''}`} />
+              placeholder="you@company.com" className={`w-full pl-10 px-4 py-2.5 text-sm transition-all duration-200 outline-none focus:bg-[rgba(255,255,255,0.1)] focus:border-[rgba(255,255,255,0.3)] placeholder-[rgba(255,255,255,0.35)] ${errors.email ? 'input-error' : ''}`}
+              style={{ background: 'rgba(255, 255, 255, 0.06)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '10px', color: '#fff', '--autofill-color': '#fff' }} />
           </div>
-          {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>}
+          {errors.email && <p className="text-xs mt-1" style={{ color: '#a3a3a0' }}>{errors.email.message}</p>}
         </div>
 
         <div>
-          <label className="label text-slate-400">Password</label>
-          <div className="relative">
-            <HiLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <label className="label uppercase" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', letterSpacing: '0.06em' }}>PASSWORD</label>
+          <div className="relative mt-1.5">
+            <HiLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'rgba(255,255,255,0.5)' }} />
             <input {...register('password', {
               required: 'Required',
               minLength: { value: 8, message: 'Min 8 characters' },
@@ -69,36 +81,44 @@ export default function RegisterPage() {
               }
             })}
               type={showPw ? 'text' : 'password'} placeholder="e.g. Admin@1234"
-              className={`input pl-10 pr-10 bg-surface-900 border-white/10 text-white placeholder:text-slate-600 focus:border-brand-500 ${errors.password ? 'input-error' : ''}`} />
-            <button type="button" onClick={() => setShowPw(p => !p)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+              className={`w-full pl-10 pr-10 px-4 py-2.5 text-sm transition-all duration-200 outline-none focus:bg-[rgba(255,255,255,0.1)] focus:border-[rgba(255,255,255,0.3)] placeholder-[rgba(255,255,255,0.35)] ${errors.password ? 'input-error' : ''}`}
+              style={{ background: 'rgba(255, 255, 255, 0.06)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '10px', color: '#fff', '--autofill-color': '#fff' }} />
+            <button type="button" onClick={() => setShowPw(p => !p)} className="absolute right-3.5 top-1/2 -translate-y-1/2 hover:opacity-80" style={{ color: 'rgba(255,255,255,0.5)' }}>
               {showPw ? <HiEyeOff className="w-4 h-4" /> : <HiEye className="w-4 h-4" />}
             </button>
           </div>
           {errors.password
-            ? <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>
-            : <p className="text-xs text-slate-500 mt-1">Min 8 chars · uppercase · lowercase · digit · special char from @ $ ! % * ? &</p>
+            ? <p className="text-xs mt-1" style={{ color: '#a3a3a0' }}>{errors.password.message}</p>
+            : <p className="text-xs mt-1" style={{ color: '#a3a3a0', opacity: 0.8 }}>Min 8 chars · uppercase · lowercase · digit · special char from @ $ ! % * ? &</p>
           }
         </div>
 
         <div>
-          <label className="label text-slate-400">Confirm Password</label>
-          <div className="relative">
-            <HiLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <label className="label uppercase" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', letterSpacing: '0.06em' }}>CONFIRM PASSWORD</label>
+          <div className="relative mt-1.5">
+            <HiLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'rgba(255,255,255,0.5)' }} />
             <input {...register('confirm', { required: 'Required', validate: v => v === pw || 'Passwords do not match' })}
               type="password" placeholder="••••••••"
-              className={`input pl-10 bg-surface-900 border-white/10 text-white placeholder:text-slate-600 focus:border-brand-500 ${errors.confirm ? 'input-error' : ''}`} />
+              className={`w-full pl-10 px-4 py-2.5 text-sm transition-all duration-200 outline-none focus:bg-[rgba(255,255,255,0.1)] focus:border-[rgba(255,255,255,0.3)] placeholder-[rgba(255,255,255,0.35)] ${errors.confirm ? 'input-error' : ''}`}
+              style={{ background: 'rgba(255, 255, 255, 0.06)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '10px', color: '#fff', '--autofill-color': '#fff' }} />
           </div>
-          {errors.confirm && <p className="text-xs text-red-400 mt-1">{errors.confirm.message}</p>}
+          {errors.confirm && <p className="text-xs mt-1" style={{ color: '#a3a3a0' }}>{errors.confirm.message}</p>}
         </div>
 
-        <motion.button type="submit" disabled={loading} whileTap={{ scale: 0.98 }} className="btn-primary w-full py-3 text-base mt-2">
-          {loading ? <><Spinner size="sm" /> Creating account…</> : 'Create account'}
+        <motion.button 
+          type="submit" 
+          disabled={loading} 
+          whileTap={{ scale: 0.98 }} 
+          className="w-full py-3 text-base mt-4 transition-colors disabled:opacity-50"
+          style={{ background: '#f5f5f5', color: '#0a0a0a', borderRadius: '10px', fontWeight: 500, backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
+        >
+          {loading ? <div className="flex items-center justify-center gap-2"><Spinner size="sm" /> Creating account…</div> : 'Create account'}
         </motion.button>
       </form>
 
-      <p className="text-center text-sm text-slate-500 mt-6">
+      <p className="text-center text-sm mt-6" style={{ color: '#a3a3a0' }}>
         Already have an account?{' '}
-        <Link to="/login" className="text-brand-400 hover:text-brand-300 font-semibold">Sign in</Link>
+        <Link to="/login" className="font-medium hover:underline hover:opacity-100" style={{ color: '#f5f5f5' }}>Sign in</Link>
       </p>
     </div>
   )

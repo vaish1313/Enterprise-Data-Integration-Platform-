@@ -38,8 +38,8 @@ export function Modal({ open, onClose, title, children, size = 'md' }) {
             className={`relative w-full ${widths[size]} card overflow-hidden`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/10">
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
+            <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--glass-border)' }}>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
               <button onClick={onClose} className="btn-icon">
                 <HiX className="w-4 h-4" />
               </button>
@@ -58,7 +58,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }) {
 export function ConfirmModal({ open, onClose, onConfirm, title, message, danger = false, loading = false }) {
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
-      <p className="text-sm text-slate-600 dark:text-slate-300 mb-6">{message}</p>
+      <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>{message}</p>
       <div className="flex justify-end gap-3">
         <button onClick={onClose} className="btn-secondary" disabled={loading}>Cancel</button>
         <button

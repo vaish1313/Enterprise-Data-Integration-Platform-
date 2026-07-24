@@ -9,14 +9,14 @@ import { useAuth } from '../context/AuthContext'
 import clsx from 'clsx'
 
 const NAV = [
-  { to: '/dashboard',       icon: HiViewGrid,       label: 'Dashboard',        roles: ['ADMIN','ANALYST','OPERATOR'] },
-  { to: '/data-sources',    icon: HiDatabase,        label: 'Data Sources',     roles: ['ADMIN','ANALYST','OPERATOR'] },
-  { to: '/ingestion',       icon: HiDownload,        label: 'Ingestion Jobs',   roles: ['ADMIN','ANALYST','OPERATOR'] },
-  { to: '/transformation',  icon: HiLightningBolt,   label: 'Transformation',   roles: ['ADMIN','ANALYST'] },
-  { to: '/sync',            icon: HiRefresh,         label: 'Synchronization',  roles: ['ADMIN','ANALYST','OPERATOR'] },
-  { to: '/audit',           icon: HiClipboardList,   label: 'Audit Logs',       roles: ['ADMIN','ANALYST','OPERATOR'] },
-  { to: '/users',           icon: HiUsers,           label: 'User Management',  roles: ['ADMIN'] },
-  { to: '/notifications',   icon: HiBell,            label: 'Notifications',    roles: ['ADMIN','ANALYST','OPERATOR'] },
+  { to: '/dashboard', icon: HiViewGrid, label: 'Dashboard', roles: ['ADMIN', 'ANALYST', 'OPERATOR'] },
+  { to: '/data-sources', icon: HiDatabase, label: 'Data Sources', roles: ['ADMIN', 'ANALYST', 'OPERATOR'] },
+  { to: '/ingestion', icon: HiDownload, label: 'Ingestion Jobs', roles: ['ADMIN', 'ANALYST', 'OPERATOR'] },
+  { to: '/transformation', icon: HiLightningBolt, label: 'Transformation', roles: ['ADMIN', 'ANALYST'] },
+  { to: '/sync', icon: HiRefresh, label: 'Synchronization', roles: ['ADMIN', 'ANALYST', 'OPERATOR'] },
+  { to: '/audit', icon: HiClipboardList, label: 'Audit Logs', roles: ['ADMIN', 'ANALYST', 'OPERATOR'] },
+  { to: '/users', icon: HiUsers, label: 'User Management', roles: ['ADMIN'] },
+  { to: '/notifications', icon: HiBell, label: 'Notifications', roles: ['ADMIN', 'ANALYST', 'OPERATOR'] },
 ]
 
 export function Sidebar({ open, onClose }) {
@@ -28,11 +28,11 @@ export function Sidebar({ open, onClose }) {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-        <div className="w-9 h-9 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glow-sm flex-shrink-0">
-          <HiChip className="w-5 h-5 text-white" />
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)' }}>
+          <HiChip className="w-5 h-5" style={{ color: 'var(--text-primary)' }} />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-bold text-white leading-tight truncate">EDIP</p>
+          <p className="text-[18px] font-bold text-gray-900 leading-tight truncate">EDIP</p>
           <p className="text-[10px] text-slate-400 truncate">Data Integration</p>
         </div>
         {/* Mobile close */}
@@ -43,7 +43,7 @@ export function Sidebar({ open, onClose }) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+        <p className="px-3 mb-2 section-label">
           Navigation
         </p>
         {visible.map(({ to, icon: Icon, label }) => (
@@ -63,8 +63,8 @@ export function Sidebar({ open, onClose }) {
 
       {/* User chip */}
       <div className="px-3 py-4 border-t border-white/10">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5">
-          <div className="w-8 h-8 rounded-full bg-gradient-brand flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: 'var(--glass-fill)' }}>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}>
             {user?.username?.[0]?.toUpperCase() ?? 'U'}
           </div>
           <div className="min-w-0">
@@ -79,7 +79,7 @@ export function Sidebar({ open, onClose }) {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-60 bg-surface-900 border-r border-white/10 h-screen sticky top-0 flex-shrink-0">
+      <aside className="hidden lg:flex flex-col w-60 glass-card !rounded-none !border-y-0 !border-l-0 h-screen sticky top-0 flex-shrink-0">
         {content}
       </aside>
 
@@ -95,7 +95,7 @@ export function Sidebar({ open, onClose }) {
             <motion.aside
               initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }}
               transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-              className="fixed left-0 top-0 z-50 w-64 h-full bg-surface-900 border-r border-white/10 lg:hidden"
+              className="fixed left-0 top-0 z-50 w-64 h-full glass-card !rounded-none !border-y-0 !border-l-0 lg:hidden"
             >
               {content}
             </motion.aside>

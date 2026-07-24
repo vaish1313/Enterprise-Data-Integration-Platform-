@@ -24,30 +24,30 @@ function JobDetail({ jobId }) {
   if (!job)    return null
 
   const stats = [
-    { label: 'Total Records',  value: fmtNumber(job.totalRecords),     icon: HiDownload,    color: 'text-brand-400' },
-    { label: 'Processed',      value: fmtNumber(job.recordsProcessed), icon: HiCheckCircle, color: 'text-emerald-400' },
-    { label: 'Failed',         value: fmtNumber(job.recordsFailed),    icon: HiXCircle,     color: 'text-red-400' },
-    { label: 'Started',        value: fmtDateTime(job.startedAt),      icon: HiClock,       color: 'text-blue-400' },
+    { label: 'Total Records',  value: fmtNumber(job.totalRecords),     icon: HiDownload },
+    { label: 'Processed',      value: fmtNumber(job.recordsProcessed), icon: HiCheckCircle },
+    { label: 'Failed',         value: fmtNumber(job.recordsFailed),    icon: HiXCircle },
+    { label: 'Started',        value: fmtDateTime(job.startedAt),      icon: HiClock },
   ]
 
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3">
         {stats.map(s => (
-          <div key={s.label} className="bg-white dark:bg-surface-800 rounded-xl p-3 flex items-center gap-3">
-            <s.icon className={`w-5 h-5 ${s.color} flex-shrink-0`} />
+          <div key={s.label} className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)' }}>
+            <s.icon className={`w-5 h-5 flex-shrink-0`} style={{ color: 'var(--text-primary)' }} />
             <div>
-              <p className="text-xs text-slate-400">{s.label}</p>
-              <p className="text-sm font-bold text-slate-800 dark:text-white">{s.value}</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{s.label}</p>
+              <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{s.value}</p>
             </div>
           </div>
         ))}
       </div>
 
       {job.errorMessage && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
-          <p className="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">Error</p>
-          <p className="text-xs text-red-700 dark:text-red-300 font-mono">{job.errorMessage}</p>
+        <div className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}>
+          <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Error</p>
+          <p className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{job.errorMessage}</p>
         </div>
       )}
 
@@ -60,9 +60,9 @@ function JobDetail({ jobId }) {
           ['Triggered By', job.triggeredBy || '—'],
           ['Completed',    fmtDateTime(job.completedAt)],
         ].map(([k, v]) => (
-          <div key={k} className="bg-white dark:bg-surface-800 rounded-lg p-2.5">
-            <p className="text-slate-400 mb-0.5">{k}</p>
-            <p className="font-medium text-slate-700 dark:text-slate-200 truncate font-mono text-[11px]">{v}</p>
+          <div key={k} className="rounded-lg p-2.5" style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)' }}>
+            <p className="mb-0.5" style={{ color: 'var(--text-muted)' }}>{k}</p>
+            <p className="font-medium truncate font-mono text-[11px]" style={{ color: 'var(--text-primary)' }}>{v}</p>
           </div>
         ))}
       </div>
@@ -117,8 +117,8 @@ function UploadModal({ open, onClose, onSuccess }) {
             accept=".csv"
             onChange={e => setFile(e.target.files[0])}
             className="input file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0
-                       file:text-xs file:font-semibold file:bg-brand-600 file:text-white
-                       hover:file:bg-brand-700 cursor-pointer"
+                       file:text-xs file:font-semibold file:bg-white file:text-black
+                       hover:file:opacity-80 cursor-pointer"
           />
         </div>
         {file && (
@@ -179,13 +179,13 @@ export default function IngestionPage() {
     { key: 'totalRecords',     label: 'Total',     render: v => fmtNumber(v) },
     {
       key: 'recordsProcessed', label: 'Processed',
-      render: v => <span className="text-emerald-500 font-semibold">{fmtNumber(v)}</span>,
+      render: v => <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{fmtNumber(v)}</span>,
     },
     {
       key: 'recordsFailed', label: 'Failed',
       render: v => v > 0
-        ? <span className="text-red-400 font-semibold">{fmtNumber(v)}</span>
-        : <span className="text-slate-400">0</span>,
+        ? <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>{fmtNumber(v)}</span>
+        : <span style={{ color: 'var(--text-muted)' }}>0</span>,
     },
     { key: 'startedAt', label: 'Started', render: v => fmtDateTime(v) },
     {
@@ -223,7 +223,7 @@ export default function IngestionPage() {
       </div>
 
       {/* Filters */}
-      <div className="card p-4 flex flex-wrap gap-3">
+      <div className="glass-card p-4 flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
@@ -246,7 +246,7 @@ export default function IngestionPage() {
       </div>
 
       {/* Table + inline detail */}
-      <div className="card p-0 overflow-hidden">
+      <div className="glass-card p-0 overflow-hidden">
         <DataTable
           columns={columns}
           data={data?.content}
@@ -262,10 +262,10 @@ export default function IngestionPage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="border-t border-slate-200 dark:border-white/10 overflow-hidden"
+              className="border-t overflow-hidden" style={{ borderColor: 'var(--glass-border)' }}
             >
-              <div className="p-5 bg-slate-50 dark:bg-surface-900/50">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
+              <div className="p-5" style={{ background: 'var(--glass-fill)' }}>
+                <p className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: 'var(--text-muted)' }}>
                   Job Details
                 </p>
                 <JobDetail jobId={detailId} />
@@ -274,7 +274,7 @@ export default function IngestionPage() {
           )}
         </AnimatePresence>
 
-        <div className="px-4 py-3 border-t border-slate-200 dark:border-white/10">
+        <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--glass-border)' }}>
           <Pagination page={page} totalPages={data?.totalPages ?? 0} onPageChange={setPage} />
         </div>
       </div>

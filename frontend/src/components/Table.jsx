@@ -21,7 +21,7 @@ export function DataTable({ columns, data, loading, emptyMessage = 'No records f
           ) : !data || data.length === 0 ? (
             /* Handles both null/undefined data (error state) and empty array */
             <tr>
-              <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
+              <td colSpan={columns.length} className="px-4 py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                 {emptyMessage}
               </td>
             </tr>
@@ -61,7 +61,7 @@ export function Pagination({ page, totalPages, onPageChange }) {
 
   return (
     <div className="flex items-center justify-between mt-4 text-sm flex-wrap gap-2">
-      <span className="text-slate-500 dark:text-slate-400 text-xs">
+      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
         Page {page + 1} of {totalPages}
       </span>
       <div className="flex gap-1 flex-wrap">
@@ -87,8 +87,9 @@ export function Pagination({ page, totalPages, onPageChange }) {
             key={p}
             onClick={() => onPageChange(p)}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-              p === page ? 'bg-brand-600 text-white' : 'btn-secondary'
+              p === page ? 'shadow-sm' : 'btn-secondary'
             }`}
+            style={p === page ? { background: 'var(--text-primary)', color: 'var(--bg-base)' } : {}}
           >
             {p + 1}
           </button>

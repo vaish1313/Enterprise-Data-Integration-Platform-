@@ -18,10 +18,10 @@ const MOCK = [
 ]
 
 const ICON = {
-  success: { icon: HiCheckCircle,      bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
-  error:   { icon: HiXCircle,          bg: 'bg-red-500/10',     text: 'text-red-400' },
-  info:    { icon: HiInformationCircle, bg: 'bg-blue-500/10',   text: 'text-blue-400' },
-  warning: { icon: HiExclamation,      bg: 'bg-amber-500/10',   text: 'text-amber-400' },
+  success: { icon: HiCheckCircle },
+  error:   { icon: HiXCircle },
+  info:    { icon: HiInformationCircle },
+  warning: { icon: HiExclamation },
 }
 
 export default function NotificationsPage() {
@@ -58,7 +58,7 @@ export default function NotificationsPage() {
             </button>
           )}
           {items.length > 0 && (
-            <button onClick={clearAll} className="btn-ghost text-xs text-red-400 hover:text-red-500">
+            <button onClick={clearAll} className="btn-ghost text-xs hover:opacity-80" style={{ color: 'var(--text-primary)' }}>
               <HiTrash className="w-3.5 h-3.5" /> Clear all
             </button>
           )}
@@ -66,20 +66,22 @@ export default function NotificationsPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-1 p-1 bg-slate-100 dark:bg-surface-800 rounded-xl w-fit">
+      <div className="flex gap-1 p-1 rounded-xl w-fit glass-card" style={{ padding: '4px' }}>
         {['all', 'unread', 'read'].map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
             className={`px-4 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
-              filter === f
-                ? 'bg-white dark:bg-surface-700 text-slate-800 dark:text-white shadow-sm'
-                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              filter === f ? 'shadow-sm' : 'hover:opacity-80'
             }`}
+            style={{
+              background: filter === f ? 'var(--text-primary)' : 'transparent',
+              color: filter === f ? 'var(--bg-base)' : 'var(--text-secondary)'
+            }}
           >
             {f}
             {f === 'unread' && unread > 0 && (
-              <span className="ml-1.5 bg-brand-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+              <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: filter === f ? 'var(--bg-base)' : 'var(--text-primary)', color: filter === f ? 'var(--text-primary)' : 'var(--bg-base)' }}>
                 {unread}
               </span>
             )}
@@ -94,14 +96,14 @@ export default function NotificationsPage() {
             <motion.div
               key="empty"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="card p-12 flex flex-col items-center gap-3 text-center"
+              className="glass-card p-12 flex flex-col items-center gap-3 text-center"
             >
-              <HiBell className="w-10 h-10 text-slate-300 dark:text-slate-600" />
-              <p className="text-slate-500 dark:text-slate-400 text-sm">No notifications here</p>
+              <HiBell className="w-10 h-10" style={{ color: 'var(--text-muted)' }} />
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No notifications here</p>
             </motion.div>
           ) : (
             filtered.map((n, i) => {
-              const { icon: Icon, bg, text } = ICON[n.type]
+              const { icon: Icon } = ICON[n.type]
               return (
                 <motion.div
                   key={n.id}
@@ -109,23 +111,24 @@ export default function NotificationsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: 40, height: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className={`card p-4 flex items-start gap-3 transition-all ${
-                    !n.read ? 'border-l-4 border-l-brand-500' : ''
+                  className={`glass-card p-4 flex items-start gap-3 transition-all ${
+                    !n.read ? '!border-l-4' : ''
                   }`}
+                  style={{ borderLeftColor: !n.read ? 'var(--text-primary)' : 'var(--glass-border)' }}
                 >
-                  <div className={`p-2 rounded-xl ${bg} flex-shrink-0 mt-0.5`}>
-                    <Icon className={`w-4 h-4 ${text}`} />
+                  <div className="p-2 rounded-xl flex-shrink-0 mt-0.5" style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)' }}>
+                    <Icon className="w-4 h-4" style={{ color: 'var(--text-primary)' }} />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className={`text-sm font-semibold ${!n.read ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+                      <p className="text-sm font-semibold" style={{ color: !n.read ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                         {n.title}
-                        {!n.read && <span className="ml-2 w-1.5 h-1.5 rounded-full bg-brand-500 inline-block align-middle" />}
+                        {!n.read && <span className="ml-2 w-1.5 h-1.5 rounded-full inline-block align-middle" style={{ background: 'var(--text-primary)' }} />}
                       </p>
-                      <span className="text-[11px] text-slate-400 flex-shrink-0">{fmtRelative(n.time)}</span>
+                      <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{fmtRelative(n.time)}</span>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{n.body}</p>
+                    <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{n.body}</p>
                   </div>
 
                   <div className="flex items-center gap-1 flex-shrink-0">
@@ -134,7 +137,7 @@ export default function NotificationsPage() {
                         <HiCheck className="w-3.5 h-3.5" />
                       </button>
                     )}
-                    <button onClick={() => remove(n.id)} className="btn-icon text-red-400 hover:text-red-500" title="Dismiss">
+                    <button onClick={() => remove(n.id)} className="btn-icon hover:opacity-80" style={{ color: 'var(--text-primary)' }} title="Dismiss">
                       <HiTrash className="w-3.5 h-3.5" />
                     </button>
                   </div>

@@ -17,21 +17,14 @@ import { fmtDateTime, fmtNumber, fmtMs, fmtPercent, fmtRelative, statusColor } f
 
 /* ── Stats card ─────────────────────────────────────────────────────────── */
 function StatCard({ label, value, icon: Icon, color }) {
-  const colors = {
-    green: 'bg-emerald-500/10 text-emerald-400',
-    red:   'bg-red-500/10 text-red-400',
-    blue:  'bg-blue-500/10 text-blue-400',
-    amber: 'bg-amber-500/10 text-amber-400',
-    brand: 'bg-brand-500/10 text-brand-400',
-  }
   return (
-    <div className="card p-4 flex items-center gap-3">
-      <div className={`p-2.5 rounded-xl ${colors[color]}`}>
-        <Icon className="w-5 h-5" />
+    <div className="glass-card p-4 flex items-center gap-3">
+      <div className="p-2.5 rounded-xl" style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)' }}>
+        <Icon className="w-5 h-5" style={{ color: 'var(--text-primary)' }} />
       </div>
       <div>
-        <p className="text-xs text-slate-400">{label}</p>
-        <p className="text-lg font-extrabold text-slate-900 dark:text-white">{value}</p>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{label}</p>
+        <p className="text-lg font-extrabold" style={{ color: 'var(--text-primary)' }}>{value}</p>
       </div>
     </div>
   )
@@ -92,23 +85,19 @@ function RunSyncModal({ open, onClose, onSuccess }) {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className={`rounded-xl p-4 border ${
-            report.fullySuccessful
-              ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
-              : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-          }`}>
+          <div className="rounded-xl p-4 border" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'var(--glass-border)' }}>
             <div className="flex items-center gap-2 mb-2">
               {report.fullySuccessful
-                ? <HiCheckCircle className="w-5 h-5 text-emerald-500" />
-                : <HiXCircle className="w-5 h-5 text-amber-500" />
+                ? <HiCheckCircle className="w-5 h-5" style={{ color: 'var(--text-primary)' }} />
+                : <HiXCircle className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
               }
-              <p className="font-semibold text-sm text-slate-800 dark:text-white">
+              <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                 {report.fullySuccessful ? 'Sync Successful' : 'Sync Completed with Issues'}
               </p>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300">{report.summary}</p>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{report.summary}</p>
             {report.recommendation && (
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
                 {report.recommendation}
               </p>
             )}
@@ -121,9 +110,9 @@ function RunSyncModal({ open, onClose, onSuccess }) {
               ['Failed',    fmtNumber(report.job?.recordsFailed)],
               ['Exec Time', fmtMs(report.job?.executionTimeMs)],
             ].map(([k, v]) => (
-              <div key={k} className="bg-slate-50 dark:bg-surface-900 rounded-lg p-2.5">
-                <p className="text-slate-400">{k}</p>
-                <p className="font-semibold text-slate-700 dark:text-slate-200">{v}</p>
+              <div key={k} className="rounded-lg p-2.5" style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)' }}>
+                <p style={{ color: 'var(--text-muted)' }}>{k}</p>
+                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{v}</p>
               </div>
             ))}
           </div>
@@ -141,8 +130,8 @@ function RunSyncModal({ open, onClose, onSuccess }) {
 function JobDetailPanel({ job }) {
   if (!job) return null
   return (
-    <div className="p-5 bg-slate-50 dark:bg-surface-900/50">
-      <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
+    <div className="p-5" style={{ background: 'var(--glass-fill)' }}>
+      <p className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: 'var(--text-muted)' }}>
         Job Details
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
@@ -152,16 +141,16 @@ function JobDetailPanel({ job }) {
           ['Records Skipped',   fmtNumber(job.recordsSkipped)],
           ['Completed At',      fmtDateTime(job.completedAt)],
         ].map(([k, v]) => (
-          <div key={k} className="bg-white dark:bg-surface-800 rounded-xl p-3">
-            <p className="text-slate-400 mb-0.5">{k}</p>
-            <p className="font-semibold text-slate-700 dark:text-slate-200">{v}</p>
+          <div key={k} className="rounded-xl p-3" style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)' }}>
+            <p className="mb-0.5" style={{ color: 'var(--text-muted)' }}>{k}</p>
+            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{v}</p>
           </div>
         ))}
       </div>
       {job.errorMessage && (
-        <div className="mt-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
-          <p className="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">Error</p>
-          <p className="text-xs font-mono text-red-700 dark:text-red-300">{job.errorMessage}</p>
+        <div className="mt-3 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}>
+          <p className="text-xs font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Error</p>
+          <p className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{job.errorMessage}</p>
         </div>
       )}
     </div>
@@ -201,13 +190,13 @@ export default function SyncPage() {
     { key: 'totalRecords',     label: 'Total',     render: v => fmtNumber(v) },
     {
       key: 'recordsProcessed', label: 'Synced',
-      render: v => <span className="text-emerald-500 font-semibold">{fmtNumber(v)}</span>,
+      render: v => <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{fmtNumber(v)}</span>,
     },
     {
       key: 'recordsFailed', label: 'Failed',
       render: v => v > 0
-        ? <span className="text-red-400 font-semibold">{fmtNumber(v)}</span>
-        : <span className="text-slate-400">0</span>,
+        ? <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>{fmtNumber(v)}</span>
+        : <span style={{ color: 'var(--text-muted)' }}>0</span>,
     },
     { key: 'executionTimeMs', label: 'Exec Time', render: v => fmtMs(v) },
     { key: 'triggeredBy',     label: 'Triggered By' },
@@ -260,25 +249,25 @@ export default function SyncPage() {
 
       {/* Last sync info bar */}
       {stats?.lastSynchronizationTime && (
-        <div className="card p-4 flex items-center gap-3 flex-wrap">
-          <HiClock className="w-4 h-4 text-slate-400 flex-shrink-0" />
-          <p className="text-sm text-slate-600 dark:text-slate-300">
+        <div className="glass-card p-4 flex items-center gap-3 flex-wrap">
+          <HiClock className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
             Last successful sync:{' '}
-            <strong className="text-slate-800 dark:text-white">
+            <strong style={{ color: 'var(--text-primary)' }}>
               {fmtDateTime(stats.lastSynchronizationTime)}
             </strong>
-            <span className="text-slate-400 ml-2">
+            <span className="ml-2" style={{ color: 'var(--text-muted)' }}>
               ({fmtRelative(stats.lastSynchronizationTime)})
             </span>
           </p>
-          <div className="ml-auto text-xs text-slate-400">
+          <div className="ml-auto text-xs" style={{ color: 'var(--text-muted)' }}>
             Avg: {fmtMs(stats.avgExecutionTimeMs)} · Max: {fmtMs(stats.maxExecutionTimeMs)}
           </div>
         </div>
       )}
 
       {/* Table */}
-      <div className="card p-0 overflow-hidden">
+      <div className="glass-card p-0 overflow-hidden">
         <DataTable
           columns={columns}
           data={data?.content}
@@ -294,14 +283,14 @@ export default function SyncPage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="border-t border-slate-200 dark:border-white/10 overflow-hidden"
+              className="border-t overflow-hidden" style={{ borderColor: 'var(--glass-border)' }}
             >
               <JobDetailPanel job={detailJob} />
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="px-4 py-3 border-t border-slate-200 dark:border-white/10">
+        <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--glass-border)' }}>
           <Pagination page={page} totalPages={data?.totalPages ?? 0} onPageChange={setPage} />
         </div>
       </div>

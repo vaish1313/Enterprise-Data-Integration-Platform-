@@ -12,9 +12,9 @@ export class ErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <HiExclamationCircle className="w-12 h-12 text-red-400" />
+          <HiExclamationCircle className="w-12 h-12" style={{ color: 'var(--text-primary)' }} />
           <div className="text-center">
-            <p className="font-semibold text-slate-800 dark:text-white">Something went wrong</p>
+            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>Something went wrong</p>
             <p className="text-sm text-slate-500 mt-1">{this.state.error?.message}</p>
           </div>
           <button className="btn-secondary" onClick={() => this.setState({ hasError: false })}>

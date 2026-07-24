@@ -79,7 +79,7 @@ export default function AuditPage() {
     {
       key: 'action', label: 'Action',
       render: v => (
-        <span className="font-mono text-xs bg-brand-500/10 text-brand-400 px-2 py-0.5 rounded-md">
+        <span className="font-mono text-xs px-2 py-0.5 rounded-md" style={{ background: 'var(--glass-fill)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)' }}>
           {v}
         </span>
       ),
@@ -88,10 +88,10 @@ export default function AuditPage() {
       key: 'username', label: 'User',
       render: v => (
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-gradient-brand flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: 'var(--text-primary)', color: 'var(--bg-base)' }}>
             {v?.[0]?.toUpperCase()}
           </div>
-          <span className="text-sm font-medium">{v}</span>
+          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{v}</span>
         </div>
       ),
     },
@@ -109,21 +109,21 @@ export default function AuditPage() {
     {
       key: 'details', label: 'Details',
       render: v => (
-        <span className="text-xs text-slate-500 dark:text-slate-400 max-w-xs truncate block">
+        <span className="text-xs max-w-xs truncate block" style={{ color: 'var(--text-secondary)' }}>
           {v || '—'}
         </span>
       ),
     },
     {
       key: 'ipAddress', label: 'IP',
-      render: v => <span className="font-mono text-xs text-slate-400">{v || '—'}</span>,
+      render: v => <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>{v || '—'}</span>,
     },
     {
       key: 'timestamp', label: 'Time',
       render: v => (
         <div>
-          <p className="text-xs text-slate-600 dark:text-slate-300">{fmtDateTime(v)}</p>
-          <p className="text-[10px] text-slate-400">{fmtRelative(v)}</p>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{fmtDateTime(v)}</p>
+          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{fmtRelative(v)}</p>
         </div>
       ),
     },
@@ -155,7 +155,7 @@ export default function AuditPage() {
       </div>
 
       {/* Filters */}
-      <div className="card p-4 flex flex-wrap gap-3">
+      <div className="glass-card p-4 flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
@@ -186,14 +186,14 @@ export default function AuditPage() {
       </div>
 
       {/* Table */}
-      <div className="card p-0 overflow-hidden">
+      <div className="glass-card p-0 overflow-hidden">
         <DataTable
           columns={columns}
           data={data?.content}
           loading={loading}
           emptyMessage="No audit events found"
         />
-        <div className="px-4 py-3 border-t border-slate-200 dark:border-white/10">
+        <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--glass-border)' }}>
           <Pagination page={page} totalPages={data?.totalPages ?? 0} onPageChange={setPage} />
         </div>
       </div>

@@ -26,7 +26,7 @@ function SourceForm({ onSubmit, defaultValues, loading }) {
         <label className="label">Name *</label>
         <input {...register('name', { required: 'Name is required' })}
           className={`input ${errors.name ? 'input-error' : ''}`} placeholder="My Data Source" />
-        {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>}
+        {errors.name && <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{errors.name.message}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -36,7 +36,7 @@ function SourceForm({ onSubmit, defaultValues, loading }) {
             <option value="">Select type…</option>
             {SOURCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
-          {errors.sourceType && <p className="text-xs text-red-400 mt-1">{errors.sourceType.message}</p>}
+          {errors.sourceType && <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{errors.sourceType.message}</p>}
         </div>
         <div>
           <label className="label">Status</label>
@@ -118,12 +118,12 @@ export default function DataSourcePage() {
       key: 'name', label: 'Name',
       render: (v, row) => (
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center flex-shrink-0">
-            <HiDatabase className="w-4 h-4 text-brand-400" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)' }}>
+            <HiDatabase className="w-4 h-4" style={{ color: 'var(--text-primary)' }} />
           </div>
           <div>
-            <p className="font-semibold text-slate-800 dark:text-white text-sm">{v}</p>
-            <p className="text-xs text-slate-400">{row.description || '—'}</p>
+            <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{v}</p>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{row.description || '—'}</p>
           </div>
         </div>
       ),
@@ -142,7 +142,7 @@ export default function DataSourcePage() {
           <button onClick={() => setEditTarget(row)} className="btn-icon" title="Edit">
             <HiPencil className="w-4 h-4" />
           </button>
-          <button onClick={() => setDeleteTarget(row)} className="btn-icon text-red-400 hover:text-red-500" title="Delete">
+          <button onClick={() => setDeleteTarget(row)} className="btn-icon hover:opacity-80" style={{ color: 'var(--text-primary)' }} title="Delete">
             <HiTrash className="w-4 h-4" />
           </button>
         </div>
@@ -169,7 +169,7 @@ export default function DataSourcePage() {
       </div>
 
       {/* Filters */}
-      <div className="card p-4 flex flex-wrap gap-3">
+      <div className="glass-card p-4 flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input value={search} onChange={e => { setSearch(e.target.value); setPage(0) }}
@@ -186,9 +186,9 @@ export default function DataSourcePage() {
       </div>
 
       {/* Table */}
-      <div className="card p-0 overflow-hidden">
+      <div className="glass-card p-0 overflow-hidden">
         <DataTable columns={columns} data={data?.content} loading={loading} emptyMessage="No data sources found" />
-        <div className="px-4 py-3 border-t border-slate-200 dark:border-white/10">
+        <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--glass-border)' }}>
           <Pagination page={page} totalPages={data?.totalPages ?? 0} onPageChange={setPage} />
         </div>
       </div>

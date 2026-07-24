@@ -40,7 +40,7 @@ function RuleForm({ onSubmit, defaultValues, loading, sources }) {
             className={`input ${errors.name ? 'input-error' : ''}`}
             placeholder="e.g. Uppercase Email"
           />
-          {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>}
+          {errors.name && <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{errors.name.message}</p>}
         </div>
 
         <div>
@@ -53,7 +53,7 @@ function RuleForm({ onSubmit, defaultValues, loading, sources }) {
             {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           {errors.transformationType && (
-            <p className="text-xs text-red-400 mt-1">{errors.transformationType.message}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{errors.transformationType.message}</p>
           )}
         </div>
 
@@ -130,9 +130,9 @@ function RuleForm({ onSubmit, defaultValues, loading, sources }) {
           {...register('active')}
           type="checkbox"
           id="active"
-          className="w-4 h-4 accent-brand-600"
+          className="w-4 h-4" style={{ accentColor: 'var(--text-primary)' }}
         />
-        <label htmlFor="active" className="text-sm text-slate-600 dark:text-slate-300">
+        <label htmlFor="active" className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           Active
         </label>
       </div>
@@ -216,10 +216,10 @@ export default function TransformationPage() {
       key: 'name', label: 'Rule Name',
       render: (v) => (
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-            <HiLightningBolt className="w-3.5 h-3.5 text-amber-400" />
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)' }}>
+            <HiLightningBolt className="w-3.5 h-3.5" style={{ color: 'var(--text-primary)' }} />
           </div>
-          <span className="font-semibold text-sm text-slate-800 dark:text-white">{v}</span>
+          <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{v}</span>
         </div>
       ),
     },
@@ -230,21 +230,21 @@ export default function TransformationPage() {
     {
       key: 'sourceField', label: 'Source Field',
       render: v => v
-        ? <code className="text-xs bg-slate-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">{v}</code>
+        ? <code className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>{v}</code>
         : '—',
     },
     {
       key: 'targetField', label: 'Target Field',
       render: v => v
-        ? <code className="text-xs bg-slate-100 dark:bg-surface-700 px-1.5 py-0.5 rounded">{v}</code>
+        ? <code className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>{v}</code>
         : '—',
     },
     { key: 'executionOrder', label: 'Order' },
     {
       key: 'active', label: 'Active',
       render: v => v
-        ? <HiCheckCircle className="w-4 h-4 text-emerald-400" />
-        : <HiXCircle className="w-4 h-4 text-red-400" />,
+        ? <HiCheckCircle className="w-4 h-4" style={{ color: 'var(--text-primary)' }} />
+        : <HiXCircle className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />,
     },
     { key: 'createdAt', label: 'Created', render: v => fmtDateTime(v) },
     {
@@ -256,7 +256,7 @@ export default function TransformationPage() {
           </button>
           <button
             onClick={() => setDeleteTarget(row)}
-            className="btn-icon text-red-400 hover:text-red-500"
+            className="btn-icon hover:opacity-80" style={{ color: 'var(--text-primary)' }}
             title="Delete"
           >
             <HiTrash className="w-4 h-4" />
@@ -285,7 +285,7 @@ export default function TransformationPage() {
         </div>
       </div>
 
-      <div className="card p-4 flex gap-3">
+      <div className="glass-card p-4 flex gap-3">
         <div className="relative flex-1">
           <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
@@ -297,14 +297,14 @@ export default function TransformationPage() {
         </div>
       </div>
 
-      <div className="card p-0 overflow-hidden">
+      <div className="glass-card p-0 overflow-hidden">
         <DataTable
           columns={columns}
           data={data?.content}
           loading={loading}
           emptyMessage="No transformation rules found"
         />
-        <div className="px-4 py-3 border-t border-slate-200 dark:border-white/10">
+        <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--glass-border)' }}>
           <Pagination page={page} totalPages={data?.totalPages ?? 0} onPageChange={setPage} />
         </div>
       </div>

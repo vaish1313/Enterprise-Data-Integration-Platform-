@@ -29,10 +29,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div>
+    <div style={{
+      background: 'rgba(255, 255, 255, 0.08)',
+      backdropFilter: 'blur(24px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+      border: '1px solid rgba(255, 255, 255, 0.18)',
+      borderRadius: '20px',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.37), inset 0 1px 0 rgba(255,255,255,0.1)',
+      padding: '2rem 2.25rem',
+      position: 'relative',
+      zIndex: 1
+    }}>
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-white">Sign in</h1>
-        <p className="text-slate-400 mt-2 text-sm">
+        <h1 className="text-3xl font-medium" style={{ color: '#f5f5f5' }}>Sign in</h1>
+        <p className="mt-2 text-sm" style={{ color: '#a3a3a0' }}>
           Enter your credentials to access the platform
         </p>
       </div>
@@ -40,43 +50,43 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Username */}
         <div>
-          <label className="label text-slate-400">Username</label>
-          <div className="relative">
-            <HiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <label className="label uppercase" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', letterSpacing: '0.06em' }}>USERNAME</label>
+          <div className="relative mt-1.5">
+            <HiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'rgba(255,255,255,0.5)' }} />
             <input
               {...register('username', { required: 'Username is required' })}
               placeholder="your.username"
-              className={`input pl-10 bg-surface-900 border-white/10 text-white placeholder:text-slate-600
-                          focus:border-brand-500 ${errors.username ? 'input-error' : ''}`}
+              className={`w-full pl-10 px-4 py-2.5 text-sm transition-all duration-200 outline-none focus:bg-[rgba(255,255,255,0.1)] focus:border-[rgba(255,255,255,0.3)] placeholder-[rgba(255,255,255,0.35)] ${errors.username ? 'input-error' : ''}`}
+              style={{ background: 'rgba(255, 255, 255, 0.06)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '10px', color: '#fff', '--autofill-color': '#fff' }}
             />
           </div>
           {errors.username && (
-            <p className="text-xs text-red-400 mt-1">{errors.username.message}</p>
+            <p className="text-xs mt-1" style={{ color: '#a3a3a0' }}>{errors.username.message}</p>
           )}
         </div>
 
         {/* Password */}
         <div>
-          <label className="label text-slate-400">Password</label>
-          <div className="relative">
-            <HiLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <label className="label uppercase" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px', letterSpacing: '0.06em' }}>PASSWORD</label>
+          <div className="relative mt-1.5">
+            <HiLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'rgba(255,255,255,0.5)' }} />
             <input
               {...register('password', { required: 'Password is required' })}
               type={showPw ? 'text' : 'password'}
               placeholder="••••••••"
-              className={`input pl-10 pr-10 bg-surface-900 border-white/10 text-white placeholder:text-slate-600
-                          focus:border-brand-500 ${errors.password ? 'input-error' : ''}`}
+              className={`w-full pl-10 pr-10 px-4 py-2.5 text-sm transition-all duration-200 outline-none focus:bg-[rgba(255,255,255,0.1)] focus:border-[rgba(255,255,255,0.3)] placeholder-[rgba(255,255,255,0.35)] ${errors.password ? 'input-error' : ''}`}
+              style={{ background: 'rgba(255, 255, 255, 0.06)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '10px', color: '#fff', '--autofill-color': '#fff' }}
             />
             <button
               type="button"
               onClick={() => setShowPw(p => !p)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 hover:opacity-80" style={{ color: 'rgba(255,255,255,0.5)' }}
             >
               {showPw ? <HiEyeOff className="w-4 h-4" /> : <HiEye className="w-4 h-4" />}
             </button>
           </div>
           {errors.password && (
-            <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>
+            <p className="text-xs mt-1" style={{ color: '#a3a3a0' }}>{errors.password.message}</p>
           )}
         </div>
 
@@ -85,15 +95,16 @@ export default function LoginPage() {
           type="submit"
           disabled={loading}
           whileTap={{ scale: 0.98 }}
-          className="btn-primary w-full py-3 text-base mt-2"
+          className="w-full py-3 text-base mt-4 transition-colors disabled:opacity-50"
+          style={{ background: '#f5f5f5', color: '#0a0a0a', borderRadius: '10px', fontWeight: 500, backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
         >
-          {loading ? <><Spinner size="sm" /> Signing in…</> : 'Sign in'}
+          {loading ? <div className="flex items-center justify-center gap-2"><Spinner size="sm" /> Signing in…</div> : 'Sign in'}
         </motion.button>
       </form>
 
-      <p className="text-center text-sm text-slate-500 mt-6">
+      <p className="text-center text-sm mt-6" style={{ color: '#a3a3a0' }}>
         Don't have an account?{' '}
-        <Link to="/register" className="text-brand-400 hover:text-brand-300 font-semibold">
+        <Link to="/register" className="font-medium hover:underline hover:opacity-100" style={{ color: '#f5f5f5' }}>
           Register
         </Link>
       </p>
