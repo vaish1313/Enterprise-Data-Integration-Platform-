@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext'
 import { DataTable, Pagination } from '../components/Table'
 import { Modal } from '../components/Modal'
 import { Spinner } from '../components/Loader'
+import { TruncatedId } from '../components/TruncatedId'
 import { fmtDateTime, fmtNumber, fmtMs, fmtPercent, fmtRelative, statusColor } from '../utils/formatters'
 
 /* ── Stats card ─────────────────────────────────────────────────────────── */
@@ -177,11 +178,11 @@ export default function SyncPage() {
   const columns = [
     {
       key: 'id', label: 'Job ID',
-      render: v => <span className="font-mono text-xs text-slate-400">{v?.slice(0, 8)}…</span>,
+      render: v => <TruncatedId value={v} />,
     },
     {
       key: 'dataSourceId', label: 'Data Source',
-      render: v => <span className="font-mono text-xs text-slate-400">{v?.slice(0, 8)}…</span>,
+      render: v => <TruncatedId value={v} />,
     },
     {
       key: 'status', label: 'Status',

@@ -3,6 +3,9 @@ spring:
     name: enterprise-data-integration-platform
   profiles:
     active: dev
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
 
 server:
   port: 8081

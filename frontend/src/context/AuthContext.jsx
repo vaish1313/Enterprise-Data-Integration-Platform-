@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { authApi } from '../api/authApi'
 import toast from 'react-hot-toast'
+import { setOnLogout } from '../utils/navigationService'
 
 const AuthContext = createContext(null)
 
@@ -41,14 +42,33 @@ export function AuthProvider({ children }) {
   }, [])
 
   // ── Logout ─────────────────────────────────────────────────────────────
-  const logout = useCallback(() => {
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('user')
-    setToken(null)
-    setUser(null)
-    toast.success('Signed out successfully')
+  const logout = useCallback(async (msg) => {
+    try {
+      // Invalidate refresh token server-side to prevent replay attacks
+      await authApi.logout()
+    } catch (error) {
+      console.warn('Server-side logout failed, falling back to local logout', error)
+    } finally {
+      // Always clean up local state, even if the server is unreachable
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('user')
+      setToken(null)
+      setUser(null)
+      if (msg && typeof msg === 'string') {
+        toast.error(msg)
+      } else {
+        toast.success('Signed out successfully')
+      }
+    }
   }, [])
+
+  useEffect(() => {
+    setOnLogout(logout)
+    return () => {
+      setOnLogout(null)
+    }
+  }, [logout])
 
   // ── Role helpers ───────────────────────────────────────────────────────
   const isAdmin    = user?.role === 'ADMIN'

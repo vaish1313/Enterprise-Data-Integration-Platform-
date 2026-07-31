@@ -124,8 +124,12 @@ public class IngestionController {
             )
             @RequestParam("file") MultipartFile file) {
 
-        IngestionDto.JobResponse response =
-                ingestionService.uploadAndIngestCsv(dataSourceId, file);
+        // Block on the request thread so Spring MVC does not enter async-dispatch
+        // mode. An async re-dispatch goes through the security filter chain a
+        // second time on a new thread where the SecurityContext is empty → 401.
+        // The actual CSV parsing still runs on the jobExecutor pool via @Async
+        // in IngestionService; we simply wait for the result here.
+        IngestionDto.JobResponse response = ingestionService.uploadAndIngestCsv(dataSourceId, file).join();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("CSV ingestion job completed", response));
     }
@@ -266,7 +270,9 @@ public class IngestionController {
     public ResponseEntity<ApiResponse<IngestionDto.JobResponse>> ingestFromApi(
             @Parameter(description = "Data source UUID", required = true)
             @PathVariable UUID dataSourceId) {
-        return ResponseEntity.ok(ApiResponse.success("API ingestion started",
-                ingestionService.ingestFromApi(dataSourceId)));
+        // Block on the request thread — same fix as SyncController.runSync() and
+        // uploadCsv(). Prevents async re-dispatch 401 from empty SecurityContext.
+        IngestionDto.JobResponse response = ingestionService.ingestFromApi(dataSourceId).join();
+        return ResponseEntity.ok(ApiResponse.success("API ingestion started", response));
     }
 }

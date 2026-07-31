@@ -24,13 +24,13 @@ DELETE FROM users;
 -- Password hash = BCrypt(12) of "Admin@1234"
 -- ─────────────────────────────────────────────────────────────
 INSERT INTO users (id, created_at, updated_at, username, email, password, role, enabled, first_name, last_name) VALUES
-('aaaaaaaa-0001-0000-0000-000000000001', NOW()-INTERVAL '60 days', NOW(), 'admin',    'admin@company.com',    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.iK2.', 'ADMIN',    true,  'Admin',    'User'),
-('aaaaaaaa-0002-0000-0000-000000000002', NOW()-INTERVAL '55 days', NOW(), 'analyst',  'analyst@company.com',  '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.iK2.', 'ANALYST',  true,  'Sarah',    'Mitchell'),
-('aaaaaaaa-0003-0000-0000-000000000003', NOW()-INTERVAL '50 days', NOW(), 'operator', 'operator@company.com', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.iK2.', 'OPERATOR', true,  'James',    'Carter'),
-('aaaaaaaa-0004-0000-0000-000000000004', NOW()-INTERVAL '45 days', NOW(), 'alice',    'alice@company.com',    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.iK2.', 'ANALYST',  true,  'Alice',    'Johnson'),
-('aaaaaaaa-0005-0000-0000-000000000005', NOW()-INTERVAL '40 days', NOW(), 'bob',      'bob@company.com',      '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.iK2.', 'OPERATOR', true,  'Bob',      'Williams'),
-('aaaaaaaa-0006-0000-0000-000000000006', NOW()-INTERVAL '30 days', NOW(), 'diana',    'diana@company.com',    '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.iK2.', 'ANALYST',  true,  'Diana',    'Prince'),
-('aaaaaaaa-0007-0000-0000-000000000007', NOW()-INTERVAL '20 days', NOW(), 'charlie',  'charlie@company.com',  '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/HS.iK2.', 'OPERATOR', false, 'Charlie',  'Brown');
+('aaaaaaaa-0001-0000-0000-000000000001', NOW()-INTERVAL '60 days', NOW(), 'admin',    'admin@company.com',    '$2a$12$HmqDGK8sKa6zUJSmkFt8uOVy82n0jSc2C9KKKQtT5AutoB2qHJQKu', 'ADMIN',    true,  'Admin',    'User'),
+('aaaaaaaa-0002-0000-0000-000000000002', NOW()-INTERVAL '55 days', NOW(), 'analyst',  'analyst@company.com',  '$2a$12$HmqDGK8sKa6zUJSmkFt8uOVy82n0jSc2C9KKKQtT5AutoB2qHJQKu', 'ANALYST',  true,  'Sarah',    'Mitchell'),
+('aaaaaaaa-0003-0000-0000-000000000003', NOW()-INTERVAL '50 days', NOW(), 'operator', 'operator@company.com', '$2a$12$HmqDGK8sKa6zUJSmkFt8uOVy82n0jSc2C9KKKQtT5AutoB2qHJQKu', 'OPERATOR', true,  'James',    'Carter'),
+('aaaaaaaa-0004-0000-0000-000000000004', NOW()-INTERVAL '45 days', NOW(), 'alice',    'alice@company.com',    '$2a$12$HmqDGK8sKa6zUJSmkFt8uOVy82n0jSc2C9KKKQtT5AutoB2qHJQKu', 'ANALYST',  true,  'Alice',    'Johnson'),
+('aaaaaaaa-0005-0000-0000-000000000005', NOW()-INTERVAL '40 days', NOW(), 'bob',      'bob@company.com',      '$2a$12$HmqDGK8sKa6zUJSmkFt8uOVy82n0jSc2C9KKKQtT5AutoB2qHJQKu', 'OPERATOR', true,  'Bob',      'Williams'),
+('aaaaaaaa-0006-0000-0000-000000000006', NOW()-INTERVAL '30 days', NOW(), 'diana',    'diana@company.com',    '$2a$12$HmqDGK8sKa6zUJSmkFt8uOVy82n0jSc2C9KKKQtT5AutoB2qHJQKu', 'ANALYST',  true,  'Diana',    'Prince'),
+('aaaaaaaa-0007-0000-0000-000000000007', NOW()-INTERVAL '20 days', NOW(), 'charlie',  'charlie@company.com',  '$2a$12$HmqDGK8sKa6zUJSmkFt8uOVy82n0jSc2C9KKKQtT5AutoB2qHJQKu', 'OPERATOR', false, 'Charlie',  'Brown');
 
 -- ─────────────────────────────────────────────────────────────
 -- 2.  DATA SOURCES

@@ -7,6 +7,7 @@ import com.company.integrationplatform.datasource.DataSourceNotFoundException;
 import com.company.integrationplatform.datasource.DataSourceRepository;
 import com.company.integrationplatform.ingestion.IngestionRecord;
 import com.company.integrationplatform.ingestion.IngestionRecordRepository;
+import com.company.integrationplatform.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -44,6 +45,7 @@ public class SyncExecutor {
     private final IngestionRecordRepository  recordRepository;
     private final SyncRecordValidator        validator;
     private final AuditService               auditService;
+    private final NotificationService        notificationService;
 
     /**
      * Executes a full synchronization run for the given data source.
@@ -52,8 +54,8 @@ public class SyncExecutor {
      * @param triggeredBy  "SCHEDULER" or the username who triggered manually
      * @return a {@link SyncDto.SyncReport} with full job details and summary
      */
-    @Transactional
-    public SyncDto.SyncReport execute(UUID dataSourceId, String triggeredBy) {
+    @org.springframework.scheduling.annotation.Async("jobExecutor")
+    public java.util.concurrent.CompletableFuture<SyncDto.SyncReport> execute(UUID dataSourceId, String triggeredBy) {
         long wallStart = System.currentTimeMillis();
 
         // ── Step 1: Validate data source exists ───────────────────────────────
@@ -80,112 +82,134 @@ public class SyncExecutor {
         log.info("Sync started: jobId={}, dataSource={}, triggeredBy={}",
                 job.getId(), source.getName(), triggeredBy);
 
-        int total = 0, validationPassed = 0, validationFailed = 0,
-            processed = 0, failed = 0, skipped = 0;
+        int maxRetries = 3;
+        int currentAttempt = 0;
+        long currentBackoffMs = 1000;
 
-        try {
-            // ── Step 3: Fetch pending records ─────────────────────────────────
-            List<IngestionRecord> pendingRecords =
-                    recordRepository.findPendingSyncRecords(dataSourceId);
-            total = pendingRecords.size();
+        while (currentAttempt <= maxRetries) {
+            int total = 0, validationPassed = 0, validationFailed = 0,
+                processed = 0, failed = 0, skipped = 0;
 
-            log.debug("Sync jobId={}: found {} pending records", job.getId(), total);
+            try {
+                if (currentAttempt > 0) {
+                    job.setStatus(SyncJob.SyncStatus.RETRYING);
+                    job.setRetryCount(currentAttempt);
+                    job.setLastAttemptedAt(LocalDateTime.now());
+                    syncRepository.save(job);
+                    log.info("Sync retrying (attempt {}): jobId={}", currentAttempt, job.getId());
+                }
 
-            // ── Step 4: Validate and categorize ──────────────────────────────
-            List<UUID> toMarkSynced = new ArrayList<>();
+                // ── Step 3: Fetch pending records ─────────────────────────────────
+                List<IngestionRecord> pendingRecords =
+                        recordRepository.findPendingSyncRecords(dataSourceId);
+                total = pendingRecords.size();
 
-            for (IngestionRecord record : pendingRecords) {
-                SyncRecordValidator.ValidationResult result = validator.validate(record);
+                // ── Step 4: Validate and categorize ──────────────────────────────
+                List<UUID> toMarkSynced = new ArrayList<>();
 
-                switch (result.outcome()) {
-                    case PASS -> {
-                        validationPassed++;
-                        toMarkSynced.add(record.getId());
-                        processed++;
-                    }
-                    case FAIL -> {
-                        validationFailed++;
-                        failed++;
-                        log.debug("Sync jobId={}: record {} failed validation: {}",
-                                job.getId(), record.getId(), result.reason());
-                    }
-                    case SKIP -> {
-                        skipped++;
-                        log.debug("Sync jobId={}: record {} skipped: {}",
-                                job.getId(), record.getId(), result.reason());
+                for (IngestionRecord record : pendingRecords) {
+                    SyncRecordValidator.ValidationResult result = validator.validate(record);
+
+                    switch (result.outcome()) {
+                        case PASS -> {
+                            validationPassed++;
+                            toMarkSynced.add(record.getId());
+                            processed++;
+                        }
+                        case FAIL -> {
+                            validationFailed++;
+                            failed++;
+                        }
+                        case SKIP -> {
+                            skipped++;
+                        }
                     }
                 }
-            }
 
-            // ── Step 5: Bulk-mark validated records as synchronized ───────────
-            if (!toMarkSynced.isEmpty()) {
-                // Batch in groups of 500 to avoid IN-clause limits
-                List<List<UUID>> batches = partition(toMarkSynced, 500);
-                for (List<UUID> batch : batches) {
-                    recordRepository.markAsSynchronized(batch, job.getId());
+                // ── Step 5: Bulk-mark validated records as synchronized ───────────
+                if (!toMarkSynced.isEmpty()) {
+                    List<List<UUID>> batches = partition(toMarkSynced, 500);
+                    for (List<UUID> batch : batches) {
+                        recordRepository.markAsSynchronized(batch, job.getId());
+                    }
                 }
-                log.debug("Sync jobId={}: marked {} records as synchronized",
-                        job.getId(), toMarkSynced.size());
+
+                // ── Step 6: Finalize job ──────────────────────────────────────────
+                long executionTimeMs = System.currentTimeMillis() - wallStart;
+                job.setStatus(SyncJob.SyncStatus.COMPLETED);
+                job.setTotalRecords(total);
+                job.setValidationPassed(validationPassed);
+                job.setValidationFailed(validationFailed);
+                job.setRecordsProcessed(processed);
+                job.setRecordsFailed(failed);
+                job.setRecordsSkipped(skipped);
+                job.setCompletedAt(LocalDateTime.now());
+                job.setExecutionTimeMs(executionTimeMs);
+
+                SyncJob saved = syncRepository.save(job);
+
+                auditService.log(Constants.ACTION_SYNC_COMPLETED, triggeredBy, "COMPLETED",
+                        String.format("Sync completed: jobId=%s, total=%d", saved.getId(), total));
+                
+                notificationService.createSystemNotification(
+                        triggeredBy, 
+                        "SUCCESS", 
+                        "Sync Completed",
+                        String.format("Data source '%s' synced %d records successfully.", source.getName(), total),
+                        "SYNC_JOB", 
+                        saved.getId()
+                );
+                
+                return java.util.concurrent.CompletableFuture.completedFuture(buildReport(saved));
+
+            } catch (Exception e) {
+                // Determine if retryable (e.g., DataAccessException, network issues)
+                boolean isRetryable = e instanceof org.springframework.dao.DataAccessException || 
+                                      e.getMessage().toLowerCase().contains("timeout") ||
+                                      e.getMessage().toLowerCase().contains("connection");
+                                      
+                if (!isRetryable || currentAttempt == maxRetries) {
+                    long executionTimeMs = System.currentTimeMillis() - wallStart;
+                    job.setStatus(SyncJob.SyncStatus.FAILED);
+                    job.setErrorMessage(truncate(e.getMessage(), 1000));
+                    job.setCompletedAt(LocalDateTime.now());
+                    job.setExecutionTimeMs(executionTimeMs);
+                    SyncJob saved = syncRepository.save(job);
+
+                    auditService.log(Constants.ACTION_SYNC_FAILED, triggeredBy, "FAILED",
+                            String.format("Sync failed: jobId=%s, error=%s", saved.getId(), e.getMessage()));
+
+                    notificationService.createSystemNotification(
+                            triggeredBy, 
+                            "ERROR", 
+                            "Sync Failed",
+                            String.format("Sync job for '%s' failed: %s", source.getName(), truncate(e.getMessage(), 100)),
+                            "SYNC_JOB", 
+                            saved.getId()
+                    );
+
+                    log.error("Sync failed permanently after {} retries: jobId={}, error={}", 
+                              currentAttempt, saved.getId(), e.getMessage());
+
+                    return java.util.concurrent.CompletableFuture.completedFuture(buildReport(saved));
+                }
+
+                log.warn("Sync attempt {} failed for jobId={}, retrying in {}ms. Error: {}", 
+                         currentAttempt, job.getId(), currentBackoffMs, e.getMessage());
+                         
+                try {
+                    Thread.sleep(currentBackoffMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Retry interrupted", ie);
+                }
+                
+                currentAttempt++;
+                currentBackoffMs *= 2;
             }
-
-            // ── Step 6: Finalize job ──────────────────────────────────────────
-            long executionTimeMs = System.currentTimeMillis() - wallStart;
-            job.setStatus(failed == 0 && skipped == 0
-                    ? SyncJob.SyncStatus.COMPLETED
-                    : SyncJob.SyncStatus.COMPLETED);   // COMPLETED even with partial failures
-            job.setTotalRecords(total);
-            job.setValidationPassed(validationPassed);
-            job.setValidationFailed(validationFailed);
-            job.setRecordsProcessed(processed);
-            job.setRecordsFailed(failed);
-            job.setRecordsSkipped(skipped);
-            job.setCompletedAt(LocalDateTime.now());
-            job.setExecutionTimeMs(executionTimeMs);
-
-            SyncJob saved = syncRepository.save(job);
-
-            auditService.log(
-                    Constants.ACTION_SYNC_COMPLETED,
-                    triggeredBy,
-                    "COMPLETED",
-                    String.format("Sync completed: jobId=%s, dataSource='%s', "
-                            + "total=%d, processed=%d, failed=%d, skipped=%d, execMs=%d",
-                            saved.getId(), source.getName(),
-                            total, processed, failed, skipped, executionTimeMs)
-            );
-
-            log.info("Sync completed: jobId={}, total={}, processed={}, failed={}, "
-                    + "skipped={}, execMs={}",
-                    saved.getId(), total, processed, failed, skipped, executionTimeMs);
-
-            return buildReport(saved);
-
-        } catch (Exception e) {
-            // ── Failure path ──────────────────────────────────────────────────
-            long executionTimeMs = System.currentTimeMillis() - wallStart;
-            job.setStatus(SyncJob.SyncStatus.FAILED);
-            job.setErrorMessage(truncate(e.getMessage(), 1000));
-            job.setTotalRecords(total);
-            job.setRecordsProcessed(processed);
-            job.setRecordsFailed(failed);
-            job.setRecordsSkipped(skipped);
-            job.setCompletedAt(LocalDateTime.now());
-            job.setExecutionTimeMs(executionTimeMs);
-            SyncJob saved = syncRepository.save(job);
-
-            auditService.log(
-                    Constants.ACTION_SYNC_FAILED,
-                    triggeredBy,
-                    "FAILED",
-                    String.format("Sync failed: jobId=%s, dataSource='%s', error=%s",
-                            saved.getId(), source.getName(), e.getMessage())
-            );
-
-            log.error("Sync failed: jobId={}, dataSource={}, error={}",
-                    saved.getId(), source.getName(), e.getMessage(), e);
-
-            return buildReport(saved);
         }
+        
+        return java.util.concurrent.CompletableFuture.completedFuture(null);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

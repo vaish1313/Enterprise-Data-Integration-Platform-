@@ -7,6 +7,7 @@ import com.company.integrationplatform.datasource.DataSourceEntity;
 import com.company.integrationplatform.datasource.DataSourceNotFoundException;
 import com.company.integrationplatform.datasource.DataSourceRepository;
 import com.company.integrationplatform.exception.ResourceNotFoundException;
+import com.company.integrationplatform.notification.NotificationService;
 import com.company.integrationplatform.transformation.TransformationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +57,7 @@ public class IngestionService {
     private final DataSourceRepository       dataSourceRepository;
     private final TransformationService      transformationService;
     private final AuditService               auditService;
+    private final NotificationService        notificationService;
     private final RestTemplate               restTemplate;
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -71,8 +73,9 @@ public class IngestionService {
      * @throws CsvIngestionException    if the file fails any validation check
      * @throws DataSourceNotFoundException if the data source does not exist
      */
+    @org.springframework.scheduling.annotation.Async("jobExecutor")
     @Transactional
-    public IngestionDto.JobResponse uploadAndIngestCsv(UUID dataSourceId, MultipartFile file) {
+    public java.util.concurrent.CompletableFuture<IngestionDto.JobResponse> uploadAndIngestCsv(UUID dataSourceId, MultipartFile file) {
         String currentUser = currentUsername();
 
         // ── Step 1: File validation ───────────────────────────────────────────
@@ -206,6 +209,12 @@ public class IngestionService {
             auditService.log(Constants.ACTION_INGESTION_FAILED, currentUser, "FAILED",
                     String.format("jobId=%s, error=%s", job.getId(), e.getMessage()));
 
+            notificationService.createSystemNotification(
+                    currentUser, "ERROR", "Ingestion Failed",
+                    String.format("CSV validation failed for '%s': %s", file.getOriginalFilename(), truncate(e.getMessage(), 100)),
+                    "INGESTION_JOB", job.getId()
+            );
+
             // Persist job state before re-throwing
             job.setCompletedAt(LocalDateTime.now());
             job.setTotalRecords(total);
@@ -221,6 +230,12 @@ public class IngestionService {
 
             auditService.log(Constants.ACTION_INGESTION_FAILED, currentUser, "FAILED",
                     String.format("jobId=%s, ioError=%s", job.getId(), e.getMessage()));
+
+            notificationService.createSystemNotification(
+                    currentUser, "ERROR", "Ingestion Failed",
+                    String.format("Failed to read CSV '%s': %s", file.getOriginalFilename(), truncate(e.getMessage(), 100)),
+                    "INGESTION_JOB", job.getId()
+            );
 
             job.setCompletedAt(LocalDateTime.now());
             job.setTotalRecords(total);
@@ -245,18 +260,28 @@ public class IngestionService {
                         saved.getId(), saved.getFileName(), total, processed, failed)
         );
 
+        String type = saved.getStatus() == IngestionJob.JobStatus.COMPLETED ? "SUCCESS" : "WARNING";
+        String title = type.equals("SUCCESS") ? "Ingestion Completed" : "Ingestion Partial";
+
+        notificationService.createSystemNotification(
+                currentUser, type, title,
+                String.format("File '%s' processed. Total: %d, Failed: %d", saved.getFileName(), total, failed),
+                "INGESTION_JOB", saved.getId()
+        );
+
         log.info("CSV ingestion completed: jobId={}, total={}, processed={}, failed={}, status={}",
                 saved.getId(), total, processed, failed, saved.getStatus());
 
-        return IngestionDto.JobResponse.from(saved);
+        return java.util.concurrent.CompletableFuture.completedFuture(IngestionDto.JobResponse.from(saved));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // REST API INGESTION (existing — kept intact)
     // ─────────────────────────────────────────────────────────────────────────
 
+    @org.springframework.scheduling.annotation.Async("jobExecutor")
     @Transactional
-    public IngestionDto.JobResponse ingestFromApi(UUID dataSourceId) {
+    public java.util.concurrent.CompletableFuture<IngestionDto.JobResponse> ingestFromApi(UUID dataSourceId) {
         DataSourceEntity source = getActiveSource(dataSourceId);
         String currentUser = currentUsername();
 
@@ -269,67 +294,123 @@ public class IngestionService {
                 .build();
         job = ingestionRepository.save(job);
 
-        int processed = 0, failed = 0;
+        int maxRetries = 3;
+        int currentAttempt = 0;
+        long currentBackoffMs = 1000;
 
-        try {
-            String url = source.getConnectionDetails().get("url");
-            if (url == null || url.isBlank()) {
-                throw new com.company.integrationplatform.exception.IngestionException(
-                        "Data source missing 'url' in connection details");
-            }
+        while (currentAttempt <= maxRetries) {
+            int processed = 0, failed = 0;
 
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> apiRecords = restTemplate.getForObject(url, List.class);
-
-            if (apiRecords != null) {
-                List<IngestionRecord> records = new ArrayList<>();
-                for (Map<String, Object> rawData : apiRecords) {
-                    try {
-                        Map<String, Object> transformed =
-                                transformationService.transform(rawData, dataSourceId);
-                        records.add(IngestionRecord.builder()
-                                .jobId(job.getId())
-                                .dataSourceId(dataSourceId)
-                                .rawData(rawData)
-                                .transformedData(transformed)
-                                .status(IngestionRecord.RecordStatus.PROCESSED)
-                                .build());
-                        processed++;
-                    } catch (Exception e) {
-                        records.add(IngestionRecord.builder()
-                                .jobId(job.getId())
-                                .dataSourceId(dataSourceId)
-                                .rawData(rawData)
-                                .status(IngestionRecord.RecordStatus.FAILED)
-                                .errorMessage(truncate(e.getMessage(), 1000))
-                                .build());
-                        failed++;
-                    }
+            try {
+                if (currentAttempt > 0) {
+                    job.setStatus(IngestionJob.JobStatus.RETRYING);
+                    job.setRetryCount(currentAttempt);
+                    job.setLastAttemptedAt(LocalDateTime.now());
+                    ingestionRepository.save(job);
+                    log.info("API Ingestion retrying (attempt {}): jobId={}", currentAttempt, job.getId());
                 }
-                recordRepository.saveAll(records);
+
+                String url = source.getConnectionDetails().get("url");
+                if (url == null || url.isBlank()) {
+                    throw new com.company.integrationplatform.exception.IngestionException(
+                            "Data source missing 'url' in connection details");
+                }
+
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> apiRecords = restTemplate.getForObject(url, List.class);
+
+                if (apiRecords != null) {
+                    List<IngestionRecord> records = new ArrayList<>();
+                    for (Map<String, Object> rawData : apiRecords) {
+                        try {
+                            Map<String, Object> transformed =
+                                    transformationService.transform(rawData, dataSourceId);
+                            records.add(IngestionRecord.builder()
+                                    .jobId(job.getId())
+                                    .dataSourceId(dataSourceId)
+                                    .rawData(rawData)
+                                    .transformedData(transformed)
+                                    .status(IngestionRecord.RecordStatus.PROCESSED)
+                                    .build());
+                            processed++;
+                        } catch (Exception e) {
+                            records.add(IngestionRecord.builder()
+                                    .jobId(job.getId())
+                                    .dataSourceId(dataSourceId)
+                                    .rawData(rawData)
+                                    .status(IngestionRecord.RecordStatus.FAILED)
+                                    .errorMessage(truncate(e.getMessage(), 1000))
+                                    .build());
+                            failed++;
+                        }
+                    }
+                    recordRepository.saveAll(records);
+                }
+
+                job.setStatus(failed == 0
+                        ? IngestionJob.JobStatus.COMPLETED
+                        : IngestionJob.JobStatus.PARTIAL);
+                job.setCompletedAt(LocalDateTime.now());
+                job.setRecordsProcessed(processed);
+                job.setRecordsFailed(failed);
+                IngestionJob saved = ingestionRepository.save(job);
+
+                auditService.log(Constants.ACTION_INGEST_API, currentUser,
+                        saved.getStatus().name(),
+                        String.format("API ingestion: jobId=%s, processed=%d, failed=%d",
+                                saved.getId(), processed, failed));
+
+                String type = saved.getStatus() == IngestionJob.JobStatus.COMPLETED ? "SUCCESS" : "WARNING";
+                String title = type.equals("SUCCESS") ? "API Ingestion Completed" : "API Ingestion Partial";
+        
+                notificationService.createSystemNotification(
+                        currentUser, type, title,
+                        String.format("API ingestion for source '%s' processed. Processed: %d, Failed: %d", source.getName(), processed, failed),
+                        "INGESTION_JOB", saved.getId()
+                );
+
+                return java.util.concurrent.CompletableFuture.completedFuture(IngestionDto.JobResponse.from(saved));
+
+            } catch (Exception e) {
+                boolean isRetryable = e instanceof org.springframework.web.client.RestClientException || 
+                                      e.getMessage().toLowerCase().contains("timeout") ||
+                                      e.getMessage().toLowerCase().contains("connection");
+                                      
+                if (!isRetryable || currentAttempt == maxRetries) {
+                    job.setStatus(IngestionJob.JobStatus.FAILED);
+                    job.setErrorMessage(truncate(e.getMessage(), 1000));
+                    job.setCompletedAt(LocalDateTime.now());
+                    job.setRecordsProcessed(processed);
+                    job.setRecordsFailed(failed);
+                    IngestionJob saved = ingestionRepository.save(job);
+
+                    log.error("API ingestion failed permanently after {} retries: source={}, error={}", 
+                              currentAttempt, dataSourceId, e.getMessage());
+
+                    notificationService.createSystemNotification(
+                            currentUser, "ERROR", "API Ingestion Failed",
+                            String.format("API ingestion for source '%s' failed: %s", source.getName(), truncate(e.getMessage(), 100)),
+                            "INGESTION_JOB", saved.getId()
+                    );
+
+                    return java.util.concurrent.CompletableFuture.completedFuture(IngestionDto.JobResponse.from(saved));
+                }
+
+                log.warn("API ingestion attempt {} failed for jobId={}, retrying in {}ms. Error: {}", 
+                         currentAttempt, job.getId(), currentBackoffMs, e.getMessage());
+                         
+                try {
+                    Thread.sleep(currentBackoffMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Retry interrupted", ie);
+                }
+                
+                currentAttempt++;
+                currentBackoffMs *= 2;
             }
-
-            job.setStatus(failed == 0
-                    ? IngestionJob.JobStatus.COMPLETED
-                    : IngestionJob.JobStatus.PARTIAL);
-
-        } catch (Exception e) {
-            job.setStatus(IngestionJob.JobStatus.FAILED);
-            job.setErrorMessage(truncate(e.getMessage(), 1000));
-            log.error("API ingestion failed for source {}: {}", dataSourceId, e.getMessage());
         }
-
-        job.setCompletedAt(LocalDateTime.now());
-        job.setRecordsProcessed(processed);
-        job.setRecordsFailed(failed);
-        IngestionJob saved = ingestionRepository.save(job);
-
-        auditService.log(Constants.ACTION_INGEST_API, currentUser,
-                saved.getStatus().name(),
-                String.format("API ingestion: jobId=%s, processed=%d, failed=%d",
-                        saved.getId(), processed, failed));
-
-        return IngestionDto.JobResponse.from(saved);
+        return java.util.concurrent.CompletableFuture.completedFuture(null);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

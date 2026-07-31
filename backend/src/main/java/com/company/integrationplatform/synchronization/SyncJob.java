@@ -43,22 +43,22 @@ public class SyncJob extends BaseEntity {
     /** Number of records successfully synchronized. */
     @Column(name = "records_processed")
     @Builder.Default
-    private int recordsProcessed = 0;
+    private long recordsProcessed = 0L;
 
     /** Number of records that failed validation or sync. */
     @Column(name = "records_failed")
     @Builder.Default
-    private int recordsFailed = 0;
+    private long recordsFailed = 0L;
 
     /** Number of records skipped (already synchronized or no transformed data). */
     @Column(name = "records_skipped")
     @Builder.Default
-    private int recordsSkipped = 0;
+    private long recordsSkipped = 0L;
 
     /** Total records considered for this sync run. */
     @Column(name = "total_records")
     @Builder.Default
-    private int totalRecords = 0;
+    private long totalRecords = 0L;
 
     /** Job start timestamp. */
     @Column(name = "started_at")
@@ -87,13 +87,20 @@ public class SyncJob extends BaseEntity {
     /** Validation summary — counts of records that passed/failed validation. */
     @Column(name = "validation_passed")
     @Builder.Default
-    private int validationPassed = 0;
+    private long validationPassed = 0L;
 
     @Column(name = "validation_failed")
     @Builder.Default
-    private int validationFailed = 0;
+    private long validationFailed = 0L;
+
+    @Column(name = "retry_count", nullable = false)
+    @Builder.Default
+    private int retryCount = 0;
+
+    @Column(name = "last_attempted_at")
+    private LocalDateTime lastAttemptedAt;
 
     public enum SyncStatus {
-        PENDING, RUNNING, COMPLETED, FAILED
+        PENDING, RUNNING, RETRYING, COMPLETED, FAILED
     }
 }

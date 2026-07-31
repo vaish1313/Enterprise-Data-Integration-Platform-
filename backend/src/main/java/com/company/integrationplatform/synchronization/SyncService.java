@@ -74,7 +74,7 @@ public class SyncService {
 
         for (DataSourceEntity source : activeSources) {
             try {
-                SyncDto.SyncReport report = syncExecutor.execute(source.getId(), "SCHEDULER");
+                SyncDto.SyncReport report = syncExecutor.execute(source.getId(), "SCHEDULER").join();
                 log.info("Scheduled sync completed for source '{}': {}",
                         source.getName(), report.getSummary());
             } catch (Exception e) {
@@ -96,7 +96,7 @@ public class SyncService {
      * @param dataSourceId the data source to synchronize
      * @return a {@link SyncDto.SyncReport} with full job details
      */
-    public SyncDto.SyncReport runSync(UUID dataSourceId) {
+    public java.util.concurrent.CompletableFuture<SyncDto.SyncReport> runSync(UUID dataSourceId) {
         String currentUser = currentUsername();
         log.info("Manual sync triggered: dataSourceId={}, user={}", dataSourceId, currentUser);
         return syncExecutor.execute(dataSourceId, currentUser);

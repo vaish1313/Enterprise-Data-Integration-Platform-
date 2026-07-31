@@ -42,13 +42,13 @@ public class IngestionDto {
         private String fileName;
 
         @Schema(description = "Total data rows in the CSV (header excluded)", example = "1500")
-        private int totalRecords;
+        private long totalRecords;
 
         @Schema(description = "Number of rows successfully processed", example = "1498")
-        private int recordsProcessed;
+        private long recordsProcessed;
 
         @Schema(description = "Number of rows that failed processing", example = "2")
-        private int recordsFailed;
+        private long recordsFailed;
 
         @Schema(description = "Job start timestamp", example = "2026-05-23T10:15:30")
         private LocalDateTime startedAt;

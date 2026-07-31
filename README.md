@@ -36,10 +36,18 @@ Enterprise-Data-Integration-Platform/
 ## Getting Started
 
 ### Backend
-```bash
-cd backend
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-```
+1. Create your local configuration file:
+   ```bash
+   cd backend/src/main/resources
+   cp application-dev.yml.example application-dev.yml
+   ```
+2. Open `application-dev.yml` and fill in your local database password and JWT secret.
+3. Start the application:
+   ```bash
+   cd ../../../..
+   cd backend
+   ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+   ```
 
 ### Frontend
 ```bash

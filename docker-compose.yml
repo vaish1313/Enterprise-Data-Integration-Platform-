@@ -13,5 +13,19 @@ services:
       - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  backend:
+    build: 
+      context: ./backend
+    container_name: edip-backend
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-edip_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-edip_user}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+
 volumes:
   postgres-data:

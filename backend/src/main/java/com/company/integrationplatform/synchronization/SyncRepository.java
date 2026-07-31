@@ -47,4 +47,7 @@ public interface SyncRepository extends JpaRepository<SyncJob, UUID> {
 
     @Query("SELECT COALESCE(MAX(j.executionTimeMs), 0) FROM SyncJob j WHERE j.executionTimeMs IS NOT NULL")
     Long maxExecutionTimeMs();
+
+    @Query("SELECT COALESCE(AVG(j.retryCount), 0.0) FROM SyncJob j")
+    Double getAverageRetryCount();
 }

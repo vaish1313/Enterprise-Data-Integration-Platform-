@@ -44,15 +44,15 @@ public class IngestionJob extends BaseEntity {
     /** Total rows found in the CSV (header excluded). Set after parsing. */
     @Column(name = "total_records")
     @Builder.Default
-    private int totalRecords = 0;
+    private long totalRecords = 0L;
 
     @Column(name = "records_processed")
     @Builder.Default
-    private int recordsProcessed = 0;
+    private long recordsProcessed = 0L;
 
     @Column(name = "records_failed")
     @Builder.Default
-    private int recordsFailed = 0;
+    private long recordsFailed = 0L;
 
     @Column(name = "started_at")
     private LocalDateTime startedAt;
@@ -66,8 +66,15 @@ public class IngestionJob extends BaseEntity {
     @Column(name = "triggered_by", length = 100)
     private String triggeredBy;
 
+    @Column(name = "retry_count", nullable = false)
+    @Builder.Default
+    private int retryCount = 0;
+
+    @Column(name = "last_attempted_at")
+    private LocalDateTime lastAttemptedAt;
+
     public enum JobStatus {
-        PENDING, RUNNING, COMPLETED, FAILED, PARTIAL
+        PENDING, RUNNING, RETRYING, COMPLETED, FAILED, PARTIAL
     }
 
     public enum IngestionType {

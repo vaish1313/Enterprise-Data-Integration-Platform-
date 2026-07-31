@@ -1,39 +1,69 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   HiBell, HiCheckCircle, HiXCircle, HiInformationCircle,
   HiExclamation, HiTrash, HiCheck,
 } from 'react-icons/hi'
 import { fmtRelative } from '../utils/formatters'
-
-/* ── Mock notifications (in a real app these come from a WebSocket / API) */
-const MOCK = [
-  { id: 1, type: 'success', title: 'Sync Completed',       body: 'Data source "CRM Export" synced 12,450 records successfully.',  time: new Date(Date.now() - 2 * 60000),   read: false },
-  { id: 2, type: 'error',   title: 'Ingestion Failed',     body: 'CSV upload for "Sales Q2" failed: invalid column format.',       time: new Date(Date.now() - 15 * 60000),  read: false },
-  { id: 3, type: 'info',    title: 'Scheduler Running',    body: 'Scheduled sync started for 3 active data sources.',              time: new Date(Date.now() - 60 * 60000),  read: true  },
-  { id: 4, type: 'warning', title: 'Sync Partial',         body: '42 records failed validation during sync of "ERP Connector".',   time: new Date(Date.now() - 3 * 3600000), read: true  },
-  { id: 5, type: 'success', title: 'Rule Applied',         body: 'Transformation rule "Uppercase Email" applied to 8,200 records.',time: new Date(Date.now() - 5 * 3600000), read: true  },
-  { id: 6, type: 'info',    title: 'New User Registered',  body: 'User "alice.smith" registered with ANALYST role.',               time: new Date(Date.now() - 86400000),    read: true  },
-  { id: 7, type: 'error',   title: 'Sync Failed',          body: 'Sync job for "Legacy DB" failed: connection timeout.',           time: new Date(Date.now() - 2 * 86400000),read: true  },
-]
+import { notificationsApi } from '../api/notificationsApi'
+import toast from 'react-hot-toast'
 
 const ICON = {
-  success: { icon: HiCheckCircle },
-  error:   { icon: HiXCircle },
-  info:    { icon: HiInformationCircle },
-  warning: { icon: HiExclamation },
+  SUCCESS: { icon: HiCheckCircle },
+  ERROR:   { icon: HiXCircle },
+  INFO:    { icon: HiInformationCircle },
+  WARNING: { icon: HiExclamation },
 }
 
 export default function NotificationsPage() {
-  const [items, setItems] = useState(MOCK)
+  const [items, setItems] = useState([])
   const [filter, setFilter] = useState('all')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    notificationsApi.getAll()
+      .then(data => setItems(data.content)) // Data is paginated, we grab .content
+      .catch(() => toast.error('Failed to load notifications'))
+      .finally(() => setLoading(false))
+  }, [])
 
   const unread = items.filter(n => !n.read).length
 
-  const markAll  = () => setItems(i => i.map(n => ({ ...n, read: true })))
-  const markOne  = (id) => setItems(i => i.map(n => n.id === id ? { ...n, read: true } : n))
-  const remove   = (id) => setItems(i => i.filter(n => n.id !== id))
-  const clearAll = () => setItems([])
+  const markAll = async () => {
+    try {
+      await notificationsApi.markAllAsRead()
+      setItems(i => i.map(n => ({ ...n, read: true })))
+    } catch {
+      toast.error('Failed to mark all as read')
+    }
+  }
+
+  const markOne = async (id) => {
+    try {
+      await notificationsApi.markAsRead(id)
+      setItems(i => i.map(n => n.id === id ? { ...n, read: true } : n))
+    } catch {
+      toast.error('Failed to mark as read')
+    }
+  }
+
+  const remove = async (id) => {
+    try {
+      await notificationsApi.delete(id)
+      setItems(i => i.filter(n => n.id !== id))
+    } catch {
+      toast.error('Failed to delete notification')
+    }
+  }
+
+  const clearAll = async () => {
+    try {
+      await notificationsApi.deleteAll()
+      setItems([])
+    } catch {
+      toast.error('Failed to clear notifications')
+    }
+  }
 
   const filtered = items.filter(n => {
     if (filter === 'unread') return !n.read
@@ -92,7 +122,9 @@ export default function NotificationsPage() {
       {/* List */}
       <div className="space-y-2">
         <AnimatePresence>
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="p-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Loading...</div>
+          ) : filtered.length === 0 ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -103,7 +135,7 @@ export default function NotificationsPage() {
             </motion.div>
           ) : (
             filtered.map((n, i) => {
-              const { icon: Icon } = ICON[n.type]
+              const { icon: Icon } = ICON[n.type?.toUpperCase()] || ICON.INFO
               return (
                 <motion.div
                   key={n.id}

@@ -56,22 +56,22 @@ public class SyncDto {
         private SyncJob.SyncStatus status;
 
         @Schema(description = "Total records considered for this sync run", example = "1500")
-        private int totalRecords;
+        private long totalRecords;
 
         @Schema(description = "Records that passed validation", example = "1498")
-        private int validationPassed;
+        private long validationPassed;
 
         @Schema(description = "Records that failed validation", example = "2")
-        private int validationFailed;
+        private long validationFailed;
 
         @Schema(description = "Records successfully synchronized", example = "1498")
-        private int recordsProcessed;
+        private long recordsProcessed;
 
         @Schema(description = "Records that failed synchronization", example = "0")
-        private int recordsFailed;
+        private long recordsFailed;
 
         @Schema(description = "Records skipped (already synced or no transformed data)", example = "0")
-        private int recordsSkipped;
+        private long recordsSkipped;
 
         @Schema(description = "Job start timestamp", example = "2026-05-23T10:15:30")
         private LocalDateTime startedAt;
@@ -204,8 +204,8 @@ public class SyncDto {
         private SyncJob.SyncStatus status;
         private LocalDateTime startTime;
         private LocalDateTime endTime;
-        private int recordsProcessed;
-        private int recordsFailed;
+        private long recordsProcessed;
+        private long recordsFailed;
         private String errorMessage;
         private String triggeredBy;
         private LocalDateTime createdAt;

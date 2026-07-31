@@ -1,5 +1,6 @@
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { redirect, triggerLogout } from '../utils/navigationService'
 
 const api = axios.create({
   baseURL: '/api/v1',
@@ -32,12 +33,12 @@ api.interceptors.response.use(
           err.config.headers.Authorization = `Bearer ${data.data.accessToken}`
           return api(err.config)
         } catch {
-          localStorage.clear()
-          window.location.href = '/login'
+          triggerLogout('Session expired. Please sign in again.')
+          redirect('/login')
         }
       } else {
-        localStorage.clear()
-        window.location.href = '/login'
+        triggerLogout('Session expired. Please sign in again.')
+        redirect('/login')
       }
     }
 

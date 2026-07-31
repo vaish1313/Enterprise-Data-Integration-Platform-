@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react'
 import MainLayout  from './layouts/MainLayout'
 import AuthLayout  from './layouts/AuthLayout'
 import { PageLoader } from './components/Loader'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const LoginPage          = lazy(() => import('./pages/LoginPage'))
 const RegisterPage       = lazy(() => import('./pages/RegisterPage'))
@@ -18,29 +19,31 @@ const NotFoundPage       = lazy(() => import('./pages/NotFoundPage'))
 
 export default function AppRoutes() {
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        {/* Auth routes */}
-        <Route element={<AuthLayout />}>
-          <Route path="/login"    element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-        </Route>
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Auth routes */}
+          <Route element={<AuthLayout />}>
+            <Route path="/login"    element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+          </Route>
 
-        {/* Protected app routes */}
-        <Route element={<MainLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard"      element={<DashboardPage />} />
-          <Route path="/data-sources"   element={<DataSourcePage />} />
-          <Route path="/ingestion"      element={<IngestionPage />} />
-          <Route path="/transformation" element={<TransformationPage />} />
-          <Route path="/sync"           element={<SyncPage />} />
-          <Route path="/audit"          element={<AuditPage />} />
-          <Route path="/users"          element={<UserManagementPage />} />
-          <Route path="/notifications"  element={<NotificationsPage />} />
-        </Route>
+          {/* Protected app routes */}
+          <Route element={<MainLayout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard"      element={<DashboardPage />} />
+            <Route path="/data-sources"   element={<DataSourcePage />} />
+            <Route path="/ingestion"      element={<IngestionPage />} />
+            <Route path="/transformation" element={<TransformationPage />} />
+            <Route path="/sync"           element={<SyncPage />} />
+            <Route path="/audit"          element={<AuditPage />} />
+            <Route path="/users"          element={<UserManagementPage />} />
+            <Route path="/notifications"  element={<NotificationsPage />} />
+          </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Suspense>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   )
 }

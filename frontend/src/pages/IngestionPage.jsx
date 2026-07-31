@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext'
 import { DataTable, Pagination } from '../components/Table'
 import { Modal } from '../components/Modal'
 import { Spinner } from '../components/Loader'
+import { TruncatedId } from '../components/TruncatedId'
 import { fmtDateTime, fmtNumber, statusColor } from '../utils/formatters'
 
 /* ── Job detail panel ───────────────────────────────────────────────────── */
@@ -53,8 +54,8 @@ function JobDetail({ jobId }) {
 
       <div className="grid grid-cols-2 gap-2 text-xs">
         {[
-          ['Job ID',       job.id],
-          ['Data Source',  job.dataSourceId],
+          ['Job ID',       <TruncatedId value={job.id} />],
+          ['Data Source',  <TruncatedId value={job.dataSourceId} />],
           ['Type',         job.ingestionType],
           ['File',         job.fileName || '—'],
           ['Triggered By', job.triggeredBy || '—'],
@@ -162,11 +163,11 @@ export default function IngestionPage() {
   const columns = [
     {
       key: 'id', label: 'Job ID',
-      render: v => <span className="font-mono text-xs text-slate-400">{v?.slice(0, 8)}…</span>,
+      render: v => <TruncatedId value={v} />,
     },
     {
       key: 'dataSourceId', label: 'Data Source',
-      render: v => <span className="font-mono text-xs text-slate-400">{v?.slice(0, 8)}…</span>,
+      render: v => <TruncatedId value={v} />,
     },
     {
       key: 'ingestionType', label: 'Type',

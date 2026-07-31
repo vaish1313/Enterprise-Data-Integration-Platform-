@@ -46,4 +46,12 @@ public interface IngestionRepository extends JpaRepository<IngestionJob, UUID> {
     // ── Type breakdown (dashboard) ────────────────────────────────────────────
 
     long countByIngestionType(IngestionJob.IngestionType type);
+
+    // ── Metrics ───────────────────────────────────────────────────────────────
+
+    @Query("SELECT COALESCE(AVG(j.retryCount), 0.0) FROM IngestionJob j")
+    Double getAverageRetryCount();
+
+    @Query(value = "SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (completed_at - started_at)) * 1000), 0) FROM ingestion_jobs WHERE completed_at IS NOT NULL AND started_at IS NOT NULL", nativeQuery = true)
+    Double getAverageProcessingTimeMs();
 }

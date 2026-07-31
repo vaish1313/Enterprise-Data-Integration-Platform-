@@ -100,8 +100,13 @@ public class SyncController {
     })
     public ResponseEntity<ApiResponse<SyncDto.SyncReport>> runSync(
             @Valid @RequestBody SyncDto.RunRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Sync completed",
-                syncService.runSync(request.getDataSourceId())));
+        // Resolve the CompletableFuture on the request thread so that Spring
+        // Security's SecurityContext (populated by JwtAuthenticationFilter) is
+        // never lost to an async-dispatch re-entry through the filter chain.
+        // The actual CPU work still runs on the jobExecutor pool via @Async on
+        // SyncExecutor.execute(); we simply block here until it's done.
+        SyncDto.SyncReport report = syncService.runSync(request.getDataSourceId()).join();
+        return ResponseEntity.ok(ApiResponse.success("Sync completed", report));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
