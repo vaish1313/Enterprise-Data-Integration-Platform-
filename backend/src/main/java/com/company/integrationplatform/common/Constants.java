@@ -49,6 +49,12 @@ public final class Constants {
     public static final String ACTION_SYNC_COMPLETED = "SYNC_COMPLETED";
     public static final String ACTION_SYNC_FAILED    = "SYNC_FAILED";
 
+    // Circuit breaker audit actions
+    public static final String ACTION_CIRCUIT_OPENED    = "CIRCUIT_BREAKER_OPENED";
+    public static final String ACTION_CIRCUIT_HALF_OPEN = "CIRCUIT_BREAKER_HALF_OPEN";
+    public static final String ACTION_CIRCUIT_RECOVERED = "CIRCUIT_BREAKER_RECOVERED";
+    public static final String ACTION_CIRCUIT_RESET     = "CIRCUIT_BREAKER_RESET";
+
     // CSV validation
     public static final long   MAX_CSV_FILE_SIZE_BYTES    = 10L * 1024 * 1024; // 10 MB
     public static final String CSV_CONTENT_TYPE           = "text/csv";

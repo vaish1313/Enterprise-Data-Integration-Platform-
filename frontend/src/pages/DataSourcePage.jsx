@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import {
   HiPlus, HiSearch, HiPencil, HiTrash, HiDatabase,
-  HiRefresh, HiCheckCircle, HiXCircle,
+  HiRefresh, HiCheckCircle, HiXCircle, HiShieldExclamation,
 } from 'react-icons/hi'
 import { dataSourceApi } from '../api/dataSourceApi'
 import { useFetch } from '../hooks/useFetch'
@@ -18,6 +18,69 @@ import { statusColor } from '../utils/formatters'
 const SOURCE_TYPES = ['CSV', 'REST_API', 'DATABASE']
 const STATUSES     = ['ACTIVE', 'INACTIVE', 'ERROR']
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Circuit Breaker Badge
+// Renders a coloured dot + label for the circuit_state field.
+// Green = CLOSED (healthy), Yellow = HALF_OPEN (testing), Red = OPEN (suspended)
+// ─────────────────────────────────────────────────────────────────────────────
+function CircuitBadge({ circuitState, consecutiveFailureCount }) {
+  if (!circuitState || circuitState === 'CLOSED') {
+    return (
+      <span
+        id="circuit-badge-closed"
+        className="inline-flex items-center gap-1.5 text-xs font-medium"
+        style={{ color: 'var(--text-secondary)' }}
+        title={`Circuit: CLOSED — ${consecutiveFailureCount} failure(s) recorded`}
+      >
+        <span
+          className="w-2 h-2 rounded-full flex-shrink-0"
+          style={{ background: '#22c55e', boxShadow: '0 0 4px #22c55e66' }}
+        />
+        CLOSED
+      </span>
+    )
+  }
+
+  if (circuitState === 'HALF_OPEN') {
+    return (
+      <span
+        id="circuit-badge-half-open"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold animate-pulse"
+        style={{ color: '#f59e0b' }}
+        title="Circuit: HALF_OPEN — one test attempt in progress"
+      >
+        <span
+          className="w-2 h-2 rounded-full flex-shrink-0"
+          style={{ background: '#f59e0b', boxShadow: '0 0 6px #f59e0b88' }}
+        />
+        HALF_OPEN
+      </span>
+    )
+  }
+
+  if (circuitState === 'OPEN') {
+    return (
+      <span
+        id="circuit-badge-open"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold"
+        style={{ color: '#ef4444' }}
+        title={`Circuit: OPEN — suspended after ${consecutiveFailureCount} failures`}
+      >
+        <span
+          className="w-2 h-2 rounded-full flex-shrink-0"
+          style={{ background: '#ef4444', boxShadow: '0 0 6px #ef444488' }}
+        />
+        OPEN
+      </span>
+    )
+  }
+
+  return null
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Source Form (create / edit)
+// ─────────────────────────────────────────────────────────────────────────────
 function SourceForm({ onSubmit, defaultValues, loading }) {
   const { register, handleSubmit, formState: { errors } } = useForm({ defaultValues })
   return (
@@ -61,19 +124,104 @@ function SourceForm({ onSubmit, defaultValues, loading }) {
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Reset Circuit Confirm Modal
+// Shown when admin clicks "Reset Circuit" — explains what the action does
+// ─────────────────────────────────────────────────────────────────────────────
+function ResetCircuitModal({ open, onClose, onConfirm, loading, source }) {
+  if (!source) return null
+  return (
+    <Modal open={open} onClose={onClose} title="Reset Circuit Breaker">
+      <div className="space-y-4">
+        {/* Warning banner */}
+        <div
+          className="flex items-start gap-3 rounded-lg p-3"
+          style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
+        >
+          <HiShieldExclamation className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#ef4444' }} />
+          <div>
+            <p className="text-sm font-semibold" style={{ color: '#ef4444' }}>
+              Admin override — use only after fixing the underlying issue
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+              Resetting the circuit before the root cause is resolved will result
+              in repeated failures re-tripping it immediately.
+            </p>
+          </div>
+        </div>
+
+        {/* Source info */}
+        <div className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <div className="flex justify-between">
+            <span>Data source</span>
+            <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{source.name}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Current circuit state</span>
+            <CircuitBadge circuitState={source.circuitState} consecutiveFailureCount={source.consecutiveFailureCount} />
+          </div>
+          <div className="flex justify-between">
+            <span>Consecutive failures</span>
+            <span className="font-mono font-semibold" style={{ color: '#ef4444' }}>
+              {source.consecutiveFailureCount ?? 0}
+            </span>
+          </div>
+          {source.suspendedUntil && (
+            <div className="flex justify-between">
+              <span>Suspended until</span>
+              <span className="font-mono text-xs">{new Date(source.suspendedUntil).toLocaleTimeString()}</span>
+            </div>
+          )}
+        </div>
+
+        {/* What will happen */}
+        <div
+          className="rounded-lg p-3 text-xs space-y-1"
+          style={{ background: 'var(--glass-fill)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}
+        >
+          <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>This action will:</p>
+          <p>• Set circuit_state → <span className="text-green-400 font-semibold">CLOSED</span></p>
+          <p>• Reset consecutive failure count → <span className="font-semibold">0</span></p>
+          <p>• Clear suspension window</p>
+          <p>• Restore source status → <span className="text-green-400 font-semibold">ACTIVE</span></p>
+          <p>• Write a CIRCUIT_BREAKER_RESET audit log entry</p>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-1">
+          <button onClick={onClose} className="btn-secondary" disabled={loading}>Cancel</button>
+          <button
+            id="btn-confirm-reset-circuit"
+            onClick={onConfirm}
+            disabled={loading}
+            className="btn-primary"
+            style={{ background: 'linear-gradient(135deg, #ef4444, #b91c1c)' }}
+          >
+            {loading ? 'Resetting…' : 'Reset Circuit'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Page
+// ─────────────────────────────────────────────────────────────────────────────
 export default function DataSourcePage() {
-  const { canWrite } = useAuth()
+  const { canWrite, isAdmin } = useAuth()
   const { page, size, setPage } = usePagination()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const debouncedSearch = useDebounce(search)
 
-  const [createOpen, setCreateOpen] = useState(false)
-  const [editTarget, setEditTarget] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [saving, setSaving] = useState(false)
-  const [deleting, setDeleting] = useState(false)
+  const [createOpen, setCreateOpen]         = useState(false)
+  const [editTarget, setEditTarget]         = useState(null)
+  const [deleteTarget, setDeleteTarget]     = useState(null)
+  const [resetTarget, setResetTarget]       = useState(null)   // circuit reset target
+  const [saving, setSaving]                 = useState(false)
+  const [deleting, setDeleting]             = useState(false)
+  const [resetting, setResetting]           = useState(false)
 
   const { data, loading, refetch } = useFetch(
     () => dataSourceApi.getAll({ page, size, name: debouncedSearch || undefined, sourceType: typeFilter || undefined, status: statusFilter || undefined }),
@@ -113,6 +261,17 @@ export default function DataSourcePage() {
     finally { setDeleting(false) }
   }
 
+  const handleResetCircuit = async () => {
+    setResetting(true)
+    try {
+      await dataSourceApi.resetCircuit(resetTarget.id)
+      toast.success(`Circuit reset for "${resetTarget.name}" — source is now ACTIVE`)
+      setResetTarget(null)
+      refetch()
+    } catch { toast.error('Failed to reset circuit breaker') }
+    finally { setResetting(false) }
+  }
+
   const columns = [
     {
       key: 'name', label: 'Name',
@@ -130,25 +289,76 @@ export default function DataSourcePage() {
     },
     { key: 'sourceType', label: 'Type',
       render: v => <span className="badge-blue">{v}</span> },
-    { key: 'status', label: 'Status',
-      render: v => <span className={statusColor(v)}>{v}</span> },
+    {
+      key: 'status', label: 'Status',
+      render: v => <span className={statusColor(v)}>{v}</span>,
+    },
+    {
+      // Circuit state column — shows coloured dot + label, visible to all roles
+      key: 'circuitState', label: 'Circuit',
+      render: (v, row) => (
+        <CircuitBadge
+          circuitState={v}
+          consecutiveFailureCount={row.consecutiveFailureCount}
+        />
+      ),
+    },
     { key: 'createdBy', label: 'Created By' },
     { key: 'createdAt', label: 'Created',
       render: v => v ? new Date(v).toLocaleDateString() : '—' },
     {
-      key: 'actions', label: '', width: '100px',
-      render: (_, row) => canWrite ? (
+      key: 'actions', label: '', width: '120px',
+      render: (_, row) => (
         <div className="flex items-center gap-1">
-          <button onClick={() => setEditTarget(row)} className="btn-icon" title="Edit">
-            <HiPencil className="w-4 h-4" />
-          </button>
-          <button onClick={() => setDeleteTarget(row)} className="btn-icon hover:opacity-80" style={{ color: 'var(--text-primary)' }} title="Delete">
-            <HiTrash className="w-4 h-4" />
-          </button>
+          {/* Edit — ADMIN / ANALYST */}
+          {canWrite && (
+            <button
+              id={`btn-edit-source-${row.id}`}
+              onClick={() => setEditTarget(row)}
+              className="btn-icon"
+              title="Edit"
+            >
+              <HiPencil className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Delete — ADMIN only */}
+          {isAdmin && (
+            <button
+              id={`btn-delete-source-${row.id}`}
+              onClick={() => setDeleteTarget(row)}
+              className="btn-icon hover:opacity-80"
+              style={{ color: 'var(--text-primary)' }}
+              title="Delete"
+            >
+              <HiTrash className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Reset Circuit — ADMIN only, visible only when circuit is not CLOSED */}
+          {isAdmin && row.circuitState && row.circuitState !== 'CLOSED' && (
+            <motion.button
+              id={`btn-reset-circuit-${row.id}`}
+              onClick={() => setResetTarget(row)}
+              className="btn-icon"
+              title={`Reset circuit breaker (currently ${row.circuitState})`}
+              style={{ color: '#ef4444' }}
+              whileHover={{ scale: 1.15 }}
+              whileTap={{ scale: 0.92 }}
+              animate={{ opacity: [1, 0.6, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <HiShieldExclamation className="w-4 h-4" />
+            </motion.button>
+          )}
         </div>
-      ) : null,
+      ),
     },
   ]
+
+  // Count OPEN + HALF_OPEN sources for the header warning banner
+  const openCount = data?.content?.filter(s => s.circuitState === 'OPEN').length ?? 0
+  const degradedCount = data?.content?.filter(s => s.circuitState === 'HALF_OPEN').length ?? 0
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -168,6 +378,36 @@ export default function DataSourcePage() {
         </div>
       </div>
 
+      {/* Circuit Breaker Warning Banner — shown to admins when any circuit is open */}
+      {isAdmin && (openCount > 0 || degradedCount > 0) && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start gap-3 rounded-xl px-4 py-3"
+          style={{
+            background: openCount > 0
+              ? 'linear-gradient(135deg, rgba(239,68,68,0.10), rgba(239,68,68,0.04))'
+              : 'linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.04))',
+            border: `1px solid ${openCount > 0 ? 'rgba(239,68,68,0.30)' : 'rgba(245,158,11,0.30)'}`,
+          }}
+        >
+          <HiShieldExclamation
+            className="w-5 h-5 flex-shrink-0 mt-0.5"
+            style={{ color: openCount > 0 ? '#ef4444' : '#f59e0b' }}
+          />
+          <div className="flex-1 text-sm">
+            <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+              Circuit Breaker Alert&nbsp;
+            </span>
+            <span style={{ color: 'var(--text-secondary)' }}>
+              {openCount > 0 && <>{openCount} source{openCount > 1 ? 's' : ''} <span style={{ color: '#ef4444', fontWeight: 600 }}>SUSPENDED</span> (scheduler skipping){degradedCount > 0 ? ', ' : ''}</>}
+              {degradedCount > 0 && <>{degradedCount} source{degradedCount > 1 ? 's' : ''} in <span style={{ color: '#f59e0b', fontWeight: 600 }}>HALF_OPEN</span> recovery test</>}
+              . Click the <HiShieldExclamation className="inline w-3.5 h-3.5" style={{ color: '#ef4444' }} /> icon to reset after fixing the issue.
+            </span>
+          </div>
+        </motion.div>
+      )}
+
       {/* Filters */}
       <div className="glass-card p-4 flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
@@ -179,9 +419,9 @@ export default function DataSourcePage() {
           <option value="">All types</option>
           {SOURCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0) }} className="input w-40">
+        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0) }} className="input w-44">
           <option value="">All statuses</option>
-          {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+          {[...STATUSES, 'DEGRADED', 'SUSPENDED'].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
 
@@ -212,6 +452,15 @@ export default function DataSourcePage() {
         danger
         title="Delete Data Source"
         message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
+      />
+
+      {/* Reset Circuit modal — admin only */}
+      <ResetCircuitModal
+        open={!!resetTarget}
+        onClose={() => setResetTarget(null)}
+        onConfirm={handleResetCircuit}
+        loading={resetting}
+        source={resetTarget}
       />
     </div>
   )

@@ -1,6 +1,7 @@
 package com.company.integrationplatform.synchronization;
 
 import com.company.integrationplatform.common.PageResponse;
+import com.company.integrationplatform.circuitbreaker.CircuitBreakerService;
 import com.company.integrationplatform.datasource.DataSourceEntity;
 import com.company.integrationplatform.datasource.DataSourceRepository;
 import com.company.integrationplatform.exception.ResourceNotFoundException;
@@ -43,6 +44,7 @@ public class SyncService {
     private final DataSourceRepository      dataSourceRepository;
     private final IngestionRecordRepository recordRepository;
     private final SyncExecutor              syncExecutor;
+    private final CircuitBreakerService     circuitBreakerService;
 
     // ─────────────────────────────────────────────────────────────────────────
     // SCHEDULER — every 5 minutes
@@ -51,9 +53,14 @@ public class SyncService {
     /**
      * Scheduled synchronization — runs every 5 minutes.
      *
-     * <p>Picks all ACTIVE data sources and runs a sync for each one.
-     * Each source is processed independently — a failure on one does not
-     * stop the others.
+     * <p>Fetches all schedulable data sources (ACTIVE, DEGRADED, SUSPENDED) and
+     * processes each one independently. Before attempting a sync:
+     * <ol>
+     *   <li>Calls {@link CircuitBreakerService#transitionToHalfOpenIfReady} to promote
+     *       OPEN sources whose suspension window has elapsed to HALF_OPEN.</li>
+     *   <li>Calls {@link CircuitBreakerService#isOpen} — if still OPEN, skips entirely
+     *       (no job record created, no executor call).</li>
+     * </ol>
      *
      * <p>Uses {@code fixedDelayString} so the next run starts 5 minutes
      * after the previous one completes (not a fixed-rate overlap).
@@ -62,28 +69,46 @@ public class SyncService {
     public void runScheduledSync() {
         log.info("Scheduled sync started at {}", LocalDateTime.now());
 
-        List<DataSourceEntity> activeSources =
-                dataSourceRepository.findByStatus(DataSourceEntity.SourceStatus.ACTIVE);
+        // Fetch ACTIVE + DEGRADED + SUSPENDED sources (SUSPENDED needed for auto-recovery check)
+        List<DataSourceEntity> candidateSources = dataSourceRepository.findSchedulableSources();
 
-        if (activeSources.isEmpty()) {
-            log.info("Scheduled sync: no active data sources found, skipping.");
+        if (candidateSources.isEmpty()) {
+            log.info("Scheduled sync: no schedulable data sources found, skipping.");
             return;
         }
 
-        log.info("Scheduled sync: processing {} active data source(s)", activeSources.size());
+        log.info("Scheduled sync: evaluating {} candidate source(s)", candidateSources.size());
+        int skipped = 0, attempted = 0;
 
-        for (DataSourceEntity source : activeSources) {
+        for (DataSourceEntity source : candidateSources) {
+
+            // ── Step 1: Promote OPEN → HALF_OPEN if suspension window has elapsed ──
+            circuitBreakerService.transitionToHalfOpenIfReady(source);
+
+            // ── Step 2: Skip if circuit is still OPEN ─────────────────────────
+            if (circuitBreakerService.isOpen(source)) {
+                log.info("Scheduled sync: circuit OPEN for '{}', skipping (suspended until {}).",
+                        source.getName(), source.getSuspendedUntil());
+                skipped++;
+                continue; // ← No job record created. Retry logic untouched.
+            }
+
+            // ── Step 3: Attempt sync (CLOSED or HALF_OPEN test attempt) ───────
+            attempted++;
             try {
                 SyncDto.SyncReport report = syncExecutor.execute(source.getId(), "SCHEDULER").join();
-                log.info("Scheduled sync completed for source '{}': {}",
-                        source.getName(), report.getSummary());
+                if (report != null) {
+                    log.info("Scheduled sync completed for source '{}': {}",
+                            source.getName(), report.getSummary());
+                }
             } catch (Exception e) {
                 log.error("Scheduled sync failed for source '{}': {}",
                         source.getName(), e.getMessage());
             }
         }
 
-        log.info("Scheduled sync finished at {}", LocalDateTime.now());
+        log.info("Scheduled sync finished at {}. Attempted={}, Skipped (circuit OPEN)={}.",
+                LocalDateTime.now(), attempted, skipped);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

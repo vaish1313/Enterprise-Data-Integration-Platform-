@@ -38,11 +38,10 @@ export const fmtPercent = (n) => {
 export const statusColor = (status) => {
   switch (status?.toUpperCase()) {
     case 'COMPLETED': case 'ACTIVE': case 'SUCCESS': return 'badge-green'
-    case 'FAILED':    case 'ERROR':                  return 'badge-red'
-    case 'RUNNING':                                  return 'badge-blue'
-    case 'PENDING':                                  return 'badge-yellow'
-    case 'PARTIAL':                                  return 'badge-yellow'
-    case 'INACTIVE':                                 return 'badge-gray'
-    default:                                         return 'badge-gray'
+    case 'FAILED':    case 'ERROR':  case 'SUSPENDED': return 'badge-red'
+    case 'RUNNING':                                   return 'badge-blue'
+    case 'PENDING':   case 'PARTIAL': case 'DEGRADED': return 'badge-yellow'
+    case 'INACTIVE':                                  return 'badge-gray'
+    default:                                          return 'badge-gray'
   }
 }

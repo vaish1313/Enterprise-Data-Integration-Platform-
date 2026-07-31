@@ -1,5 +1,6 @@
 package com.company.integrationplatform.datasource;
 
+import com.company.integrationplatform.circuitbreaker.CircuitState;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -98,7 +99,8 @@ public class DataSourceDto {
         private Map<String, String> connectionDetails;
 
         @Schema(
-            description = "New status for the data source. Allowed values: ACTIVE, INACTIVE, ERROR",
+            description = "New status for the data source. Allowed values: ACTIVE, INACTIVE, ERROR. "
+                        + "DEGRADED and SUSPENDED are managed by the circuit breaker and cannot be set directly.",
             example = "ACTIVE",
             allowableValues = {"ACTIVE", "INACTIVE", "ERROR"}
         )
@@ -150,6 +152,22 @@ public class DataSourceDto {
         @Schema(description = "Last update timestamp", example = "2026-05-23T12:00:00")
         private LocalDateTime updatedAt;
 
+        // ── Circuit Breaker fields ────────────────────────────────────────────
+
+        @Schema(description = "Circuit breaker state: CLOSED (normal), OPEN (suspended), HALF_OPEN (testing)",
+                example = "CLOSED")
+        private CircuitState circuitState;
+
+        @Schema(description = "Number of consecutive permanent job failures since last success", example = "0")
+        private int consecutiveFailureCount;
+
+        @Schema(description = "Timestamp of the most recent permanent job failure", example = "2026-05-23T11:00:00")
+        private LocalDateTime lastFailureAt;
+
+        @Schema(description = "Auto-recovery deadline: circuit transitions to HALF_OPEN after this timestamp",
+                example = "2026-05-23T11:15:00")
+        private LocalDateTime suspendedUntil;
+
         /**
          * Maps a {@link DataSourceEntity} to a {@link Response} DTO.
          * Entities are never returned directly from controllers.
@@ -170,6 +188,10 @@ public class DataSourceDto {
                     .createdBy(entity.getCreatedBy())
                     .createdAt(entity.getCreatedAt())
                     .updatedAt(entity.getUpdatedAt())
+                    .circuitState(entity.getCircuitState())
+                    .consecutiveFailureCount(entity.getConsecutiveFailureCount())
+                    .lastFailureAt(entity.getLastFailureAt())
+                    .suspendedUntil(entity.getSuspendedUntil())
                     .build();
         }
     }
@@ -206,6 +228,13 @@ public class DataSourceDto {
         @Schema(description = "Creation timestamp", example = "2026-05-23T10:15:30")
         private LocalDateTime createdAt;
 
+        @Schema(description = "Circuit breaker state: CLOSED (normal), OPEN (suspended), HALF_OPEN (testing)",
+                example = "CLOSED")
+        private CircuitState circuitState;
+
+        @Schema(description = "Number of consecutive permanent job failures since last success", example = "0")
+        private int consecutiveFailureCount;
+
         /**
          * Maps a {@link DataSourceEntity} to a lightweight {@link Summary} DTO.
          * Connection details are intentionally excluded from list responses.
@@ -219,6 +248,8 @@ public class DataSourceDto {
                     .description(entity.getDescription())
                     .createdBy(entity.getCreatedBy())
                     .createdAt(entity.getCreatedAt())
+                    .circuitState(entity.getCircuitState())
+                    .consecutiveFailureCount(entity.getConsecutiveFailureCount())
                     .build();
         }
     }

@@ -1,5 +1,6 @@
 package com.company.integrationplatform.datasource;
 
+import com.company.integrationplatform.circuitbreaker.CircuitBreakerService;
 import com.company.integrationplatform.common.ApiResponse;
 import com.company.integrationplatform.common.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,10 +29,11 @@ import java.util.UUID;
  *
  * <p><b>RBAC Summary:</b>
  * <ul>
- *   <li>CREATE  — ADMIN, ANALYST, OPERATOR</li>
- *   <li>READ    — ADMIN, ANALYST, OPERATOR</li>
- *   <li>UPDATE  — ADMIN, ANALYST</li>
- *   <li>DELETE  — ADMIN only</li>
+ *   <li>CREATE         — ADMIN, ANALYST, OPERATOR</li>
+ *   <li>READ           — ADMIN, ANALYST, OPERATOR</li>
+ *   <li>UPDATE         — ADMIN, ANALYST</li>
+ *   <li>DELETE         — ADMIN only</li>
+ *   <li>CIRCUIT RESET  — ADMIN only</li>
  * </ul>
  *
  * <p>Authorization is enforced at method level via {@code @PreAuthorize}.
@@ -48,7 +51,8 @@ import java.util.UUID;
 @SecurityRequirement(name = "bearerAuth")
 public class DataSourceController {
 
-    private final DataSourceService dataSourceService;
+    private final DataSourceService     dataSourceService;
+    private final CircuitBreakerService circuitBreakerService;
 
     // ─────────────────────────────────────────────────────────────────────────
     // CREATE
@@ -381,6 +385,64 @@ public class DataSourceController {
             @PathVariable UUID id) {
         dataSourceService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Data source deleted successfully", null));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CIRCUIT BREAKER — ADMIN OVERRIDE
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Manually resets the circuit breaker for a data source to CLOSED.
+     *
+     * <p><b>Allowed roles:</b> ADMIN only
+     * <p><b>Use case:</b> After diagnosing and fixing the underlying connectivity
+     * or configuration issue, an admin resets the circuit so the source is
+     * scheduled again immediately rather than waiting for the auto-recovery window.
+     *
+     * <p>Effect: {@code circuit_state=CLOSED}, {@code consecutive_failure_count=0},
+     * {@code suspended_until=null}, {@code last_failure_at=null}, {@code status=ACTIVE}.
+     * A {@code CIRCUIT_BREAKER_RESET} audit log entry is written with the admin username.
+     */
+    @PostMapping("/{id}/reset-circuit")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+        summary = "Reset circuit breaker (Admin only)",
+        description = "Manually resets the circuit breaker state to CLOSED for a data source. \n\n"
+                    + "Clears the failure counter, removes the suspension window, and restores "
+                    + "the source status to ACTIVE. Use this after diagnosing and fixing the "
+                    + "underlying connectivity issue.\n\n"
+                    + "**Allowed roles: ADMIN only.**\n\n"
+                    + "**Circuit breaker states:**\n"
+                    + "- `CLOSED` — normal operation, scheduler runs freely\n"
+                    + "- `OPEN` — suspended, scheduler skips entirely (auto-recovers via `suspended_until`)\n"
+                    + "- `HALF_OPEN` — one cautious test attempt allowed\n\n"
+                    + "This endpoint forces an immediate `CLOSED` transition regardless of current state. "
+                    + "A `CIRCUIT_BREAKER_RESET` audit event is written with the admin\'s username."
+    )
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "Circuit breaker reset — source is now CLOSED/ACTIVE"
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "403",
+            description = "Insufficient permissions — only ADMIN can reset the circuit breaker"
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "404",
+            description = "Data source not found"
+        )
+    })
+    public ResponseEntity<ApiResponse<DataSourceDto.Response>> resetCircuit(
+            @Parameter(description = "Data source UUID", required = true)
+            @PathVariable UUID id,
+            Authentication authentication) {
+        String adminUsername = authentication.getName();
+        circuitBreakerService.manualReset(id, adminUsername);
+        // Re-fetch the updated entity so the response reflects the fully reset state
+        DataSourceDto.Response updated = dataSourceService.getById(id);
+        return ResponseEntity.ok(ApiResponse.success(
+                "Circuit breaker reset successfully. Data source is now ACTIVE.", updated));
     }
 
     // ─────────────────────────────────────────────────────────────────────────

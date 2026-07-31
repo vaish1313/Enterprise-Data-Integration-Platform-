@@ -1,6 +1,7 @@
 package com.company.integrationplatform.ingestion;
 
 import com.company.integrationplatform.audit.AuditService;
+import com.company.integrationplatform.circuitbreaker.CircuitBreakerService;
 import com.company.integrationplatform.common.Constants;
 import com.company.integrationplatform.common.PageResponse;
 import com.company.integrationplatform.datasource.DataSourceEntity;
@@ -59,6 +60,7 @@ public class IngestionService {
     private final AuditService               auditService;
     private final NotificationService        notificationService;
     private final RestTemplate               restTemplate;
+    private final CircuitBreakerService      circuitBreakerService;
 
     // ─────────────────────────────────────────────────────────────────────────
     // CSV UPLOAD & INGESTION
@@ -355,6 +357,10 @@ public class IngestionService {
                 job.setRecordsFailed(failed);
                 IngestionJob saved = ingestionRepository.save(job);
 
+                // ── Circuit Breaker: API ingest COMPLETED/PARTIAL → record success ──
+                // Resets consecutive_failure_count and closes the circuit if it was open.
+                circuitBreakerService.recordSuccess(dataSourceId);
+
                 auditService.log(Constants.ACTION_INGEST_API, currentUser,
                         saved.getStatus().name(),
                         String.format("API ingestion: jobId=%s, processed=%d, failed=%d",
@@ -384,7 +390,11 @@ public class IngestionService {
                     job.setRecordsFailed(failed);
                     IngestionJob saved = ingestionRepository.save(job);
 
-                    log.error("API ingestion failed permanently after {} retries: source={}, error={}", 
+                    // ── Circuit Breaker: all retries exhausted → record permanent failure ──
+                    // Increments consecutive_failure_count; opens circuit at threshold 3.
+                    circuitBreakerService.recordFailure(dataSourceId);
+
+                    log.error("API ingestion failed permanently after {} retries: source={}, error={}",
                               currentAttempt, dataSourceId, e.getMessage());
 
                     notificationService.createSystemNotification(

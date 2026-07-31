@@ -1,6 +1,7 @@
 package com.company.integrationplatform.synchronization;
 
 import com.company.integrationplatform.audit.AuditService;
+import com.company.integrationplatform.circuitbreaker.CircuitBreakerService;
 import com.company.integrationplatform.common.Constants;
 import com.company.integrationplatform.datasource.DataSourceEntity;
 import com.company.integrationplatform.datasource.DataSourceNotFoundException;
@@ -46,6 +47,7 @@ public class SyncExecutor {
     private final SyncRecordValidator        validator;
     private final AuditService               auditService;
     private final NotificationService        notificationService;
+    private final CircuitBreakerService      circuitBreakerService;
 
     /**
      * Executes a full synchronization run for the given data source.
@@ -148,6 +150,10 @@ public class SyncExecutor {
 
                 SyncJob saved = syncRepository.save(job);
 
+                // ── Circuit Breaker: job COMPLETED → record success ──────────────────
+                // Resets consecutive_failure_count and closes the circuit if it was open.
+                circuitBreakerService.recordSuccess(dataSourceId);
+
                 auditService.log(Constants.ACTION_SYNC_COMPLETED, triggeredBy, "COMPLETED",
                         String.format("Sync completed: jobId=%s, total=%d", saved.getId(), total));
                 
@@ -175,6 +181,10 @@ public class SyncExecutor {
                     job.setCompletedAt(LocalDateTime.now());
                     job.setExecutionTimeMs(executionTimeMs);
                     SyncJob saved = syncRepository.save(job);
+
+                    // ── Circuit Breaker: all retries exhausted → record permanent failure ──
+                    // Increments consecutive_failure_count; opens circuit at threshold 3.
+                    circuitBreakerService.recordFailure(dataSourceId);
 
                     auditService.log(Constants.ACTION_SYNC_FAILED, triggeredBy, "FAILED",
                             String.format("Sync failed: jobId=%s, error=%s", saved.getId(), e.getMessage()));
