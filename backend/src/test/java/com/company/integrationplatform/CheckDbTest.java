@@ -13,29 +13,17 @@ public class CheckDbTest {
         try (Connection conn = DriverManager.getConnection(url, "neondb_owner", "npg_HPC9Up2WFJSz");
              Statement stmt = conn.createStatement()) {
             
-            System.out.println("====== CHECKING TABLES ======");
-            try (ResultSet rs = stmt.executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")) {
-                while (rs.next()) {
-                    System.out.println("Table: " + rs.getString("table_name"));
-                }
-            }
+            System.out.println("====== DB ROW COUNTS ======");
+            String[] tables = {"users", "data_sources", "ingestion_jobs", "sync_jobs", "transformation_rules", "audit_logs"};
             
-            System.out.println("====== CHECKING USERS ======");
-            try (ResultSet rs = stmt.executeQuery("SELECT * FROM users")) {
-                while (rs.next()) {
-                    System.out.println("User: " + rs.getString("email") + " Role: " + rs.getString("role"));
+            for (String table : tables) {
+                try (ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM " + table)) {
+                    if (rs.next()) {
+                        System.out.println(table + ": " + rs.getInt(1));
+                    }
+                } catch (Exception e) {
+                    System.out.println(table + ": Error - " + e.getMessage());
                 }
-            } catch (Exception e) {
-                System.out.println("Could not query users: " + e.getMessage());
-            }
-
-            System.out.println("====== CHECKING DATA SOURCES ======");
-            try (ResultSet rs = stmt.executeQuery("SELECT * FROM data_sources")) {
-                while (rs.next()) {
-                    System.out.println("Data Source: " + rs.getString("name") + " Type: " + rs.getString("source_type"));
-                }
-            } catch (Exception e) {
-                System.out.println("Could not query data_sources: " + e.getMessage());
             }
         }
     }
