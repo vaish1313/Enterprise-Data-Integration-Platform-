@@ -22,13 +22,13 @@ import java.util.stream.Collectors;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret:${JWT_SECRET:defaultSecretReplaceMeInProdAndDevEnvironmentForSecurity}}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration}")
+    @Value("${jwt.expiration:3600000}")
     private long jwtExpiration;
 
-    @Value("${jwt.refresh-expiration}")
+    @Value("${jwt.refresh-expiration:86400000}")
     private long refreshExpiration;
 
     private final UserDetailsService userDetailsService;
