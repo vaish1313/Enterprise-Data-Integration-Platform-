@@ -2,26 +2,49 @@
 -- Minimal seed data for the production demo environment
 
 -- 1. Insert 1 Admin User (password is 'admin123' bcrypt encoded)
-INSERT INTO users (username, password, email, role, status, created_at, updated_at) 
+INSERT INTO users (username, password, email, role, enabled, created_at, updated_at) 
 VALUES (
     'admin', 
-    '$2a$12$K12x4.95aKxO2B2f52N.7eKx8B1xN/5z4B7o3n2qX8Z3s6y4l5CjG', 
+    '$2b$12$d9TuIdSbaX57kUaPplpmK.Ri8deyQTx2aVpLtycC8kJtFt5p4Z8om', 
     'admin@example.com', 
-    'ROLE_ADMIN', 
-    'ACTIVE', 
+    'ADMIN', 
+    true, 
     CURRENT_TIMESTAMP, 
     CURRENT_TIMESTAMP
 ) ON CONFLICT (username) DO NOTHING;
 
 -- 2. Insert Sample Data Sources
-INSERT INTO data_sources (name, type, url, username, password, status, created_at, updated_at)
-VALUES 
-    ('CRM Database', 'POSTGRESQL', 'jdbc:postgresql://crm-db.internal:5432/crm', 'crm_user', 'crm_pass', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Marketing API', 'REST_API', 'https://api.marketing.example.com/v1', 'api_key', 'secret', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (name) DO NOTHING;
+-- Since data_sources doesn't have a unique constraint, we use WHERE NOT EXISTS to avoid duplicates
+INSERT INTO data_sources (name, source_type, connection_details, status, created_at, updated_at)
+SELECT 'CRM Database', 'DATABASE', '{"url": "jdbc:postgresql://crm-db.internal:5432/crm", "username": "crm_user", "password": "crm_pass"}'::jsonb, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM data_sources WHERE name = 'CRM Database');
+
+INSERT INTO data_sources (name, source_type, connection_details, status, created_at, updated_at)
+SELECT 'Marketing API', 'REST_API', '{"url": "https://api.marketing.example.com/v1", "api_key": "api_key", "secret": "secret"}'::jsonb, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM data_sources WHERE name = 'Marketing API');
 
 -- 3. Insert Sample Notifications
-INSERT INTO notifications (title, message, type, read, created_at)
-VALUES
-    ('System Update', 'The system has been updated to the latest version.', 'INFO', false, CURRENT_TIMESTAMP),
-    ('Deployment Successful', 'Enterprise Data Integration Platform deployed successfully.', 'SUCCESS', false, CURRENT_TIMESTAMP);
+-- Fetches the newly inserted admin user's ID to satisfy the foreign key constraint
+INSERT INTO notifications (id, user_id, type, title, message, is_read, created_at)
+SELECT 
+    gen_random_uuid(), 
+    u.id, 
+    'INFO', 
+    'System Update', 
+    'The system has been updated to the latest version.', 
+    false, 
+    CURRENT_TIMESTAMP
+FROM users u WHERE u.username = 'admin'
+AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.title = 'System Update' AND n.user_id = u.id);
+
+INSERT INTO notifications (id, user_id, type, title, message, is_read, created_at)
+SELECT 
+    gen_random_uuid(), 
+    u.id, 
+    'SUCCESS', 
+    'Deployment Successful', 
+    'Enterprise Data Integration Platform deployed successfully.', 
+    false, 
+    CURRENT_TIMESTAMP
+FROM users u WHERE u.username = 'admin'
+AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.title = 'Deployment Successful' AND n.user_id = u.id);
